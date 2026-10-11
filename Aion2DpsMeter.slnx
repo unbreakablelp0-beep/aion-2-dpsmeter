@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Aion2DpsMeter.App/Aion2DpsMeter.App.csproj" />
+    <Project Path="src/Aion2DpsMeter.Capture.Npcap/Aion2DpsMeter.Capture.Npcap.csproj" />
+    <Project Path="src/Aion2DpsMeter.Core/Aion2DpsMeter.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Aion2DpsMeter.Capture.Npcap.Tests/Aion2DpsMeter.Capture.Npcap.Tests.csproj" />
+    <Project Path="tests/Aion2DpsMeter.Core.Tests/Aion2DpsMeter.Core.Tests.csproj" />
+  </Folder>
+</Solution>

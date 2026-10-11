@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build Aion2DpsMeter.slnx -c Release
+
+      # Npcap wird auf dem Runner nicht installiert (Lizenz). Tests, die Npcap brauchen,
+      # sind mit Category=RequiresNpcap markiert und werden hier ausgeschlossen.
+      - name: Test
+        run: >-
+          dotnet test Aion2DpsMeter.slnx -c Release --no-build
+          --filter "Category!=RequiresNpcap"
+          --logger "trx"
+          --logger "console;verbosity=normal"
+          --results-directory TestResults
+
+      - name: Testergebnisse hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testergebnisse
+          path: TestResults/*.trx
+          if-no-files-found: warn
