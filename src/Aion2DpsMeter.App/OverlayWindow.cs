@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -104,8 +105,11 @@ public sealed class OverlayWindow : Window
     /// <summary>Kräftige, schmale Zahlenschrift (Windows-Systemschrift Bahnschrift, Rückfall Segoe UI).</summary>
     private static readonly FontFamily NumberFont = new("Bahnschrift SemiBold Condensed, Bahnschrift, Segoe UI");
     private readonly Ellipse _dot = new() { Width = 8, Height = 8, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _title = new() { FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, ToolTip = $"AION 2 DPS Meter {Aion2DpsMeter.Core.Updates.AppRelease.Current}" };
-    private readonly TextBlock _elapsed = new() { Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+    // Titel und Kampfzeit in EINER Textzeile (Runs): so stehen beide auf derselben Grundlinie, auch mit der schmalen
+    // Zahlenschrift – vorher saß die Zeit sichtbar höher als „Kampf“.
+    private readonly Run _title = new() { FontWeight = FontWeights.SemiBold };
+    private readonly Run _elapsed = new();
+    private readonly TextBlock _headerText = new() { VerticalAlignment = VerticalAlignment.Center, ToolTip = $"AION 2 DPS Meter {Aion2DpsMeter.Core.Updates.AppRelease.Current}" };
     private readonly TextBlock _modeButton;
     private readonly Grid _rowsHost = new() { ClipToBounds = true, VerticalAlignment = VerticalAlignment.Top };
     private readonly TextBlock _emptyText = new()
@@ -232,8 +236,10 @@ public sealed class OverlayWindow : Window
         headerLine.Children.Add(buttons);
         var left = new StackPanel { Orientation = Orientation.Horizontal };
         left.Children.Add(_dot);
-        left.Children.Add(_title);
-        left.Children.Add(_elapsed);
+        _headerText.Inlines.Add(_title);
+        _headerText.Inlines.Add(new Run("  "));
+        _headerText.Inlines.Add(_elapsed);
+        left.Children.Add(_headerText);
         headerLine.Children.Add(left);
 
         // Glas-Look: leicht durchscheinende, nach unten auslaufende Kopfzeile mit feinem Rand.

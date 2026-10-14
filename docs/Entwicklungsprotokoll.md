@@ -1764,3 +1764,9 @@ nachweislich verstanden sind. Unsichere oder fehlende Daten werden gekennzeichne
 | Tests | Core **360/360** (neu: SemVer, Release-Auswahl, Hosts, Prüfsummen, Austausch), App **14/14**, Npcap **32/32** |
 | Builds | `artifacts/0.0.1/release` (ohne Spielgrafiken, PNG 193), `artifacts/0.0.1/eigene` (mit Icons, PNG 202) |
 | Im Spiel / echtes Update | **nicht geprüft** (es gibt noch kein 0.0.x-Release; nichts gestartet) |
+### 0.0.2 - Kopfzeile: Kampf und Zeit auf einer Linie (Stand 14.10.2026, ~17:55)
+
+- Die Kampfzeit steht jetzt auf derselben Grundlinie wie das Wort Kampf. Beide sind Runs in einem TextBlock; vorher waren
+  es zwei getrennte Textbloecke, und mit der schmalen Zahlenschrift sass die Zeit versetzt.
+- Builds: `artifacts/0.0.2/release` (EXE + SHA256SUMS, PNG 193) und `artifacts/0.0.2/eigene` (PNG 202). 0.0.1 bleibt unveraendert.
+- Tests: Core 360/360, App 14/14, Npcap 32/32; Build ohne Warnungen. Im Spiel nicht geprueft.

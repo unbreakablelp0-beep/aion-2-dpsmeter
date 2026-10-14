@@ -27,7 +27,7 @@ public class UpdateCheckTests
         Assert.True(UpdateCheck.IsNewer("v1.0.0", "0.9.9"));
         Assert.False(UpdateCheck.IsNewer("v0.0.1", "0.0.1"));
         Assert.False(UpdateCheck.IsNewer("v43", "0.0.1"));
-        Assert.Equal("0.0.1", AppRelease.Current);
+        Assert.NotNull(UpdateCheck.ParseTag(AppRelease.Current)); // Version aus Directory.Build.props
     }
 
     [Fact]
