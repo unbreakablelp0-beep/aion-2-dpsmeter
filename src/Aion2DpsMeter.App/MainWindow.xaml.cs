@@ -102,6 +102,15 @@ public partial class MainWindow : Window
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Aion2DpsMeter", "Aufnahmen");
 
     private readonly UpdateService _updates = new();
+    private readonly StatsShareService _share = new();
+
+    /// <summary>Eigene Werte eines Bosskampfs an die Bestenliste – nur mit Zustimmung (Einstellung „Teilen“).</summary>
+    private void ShareFight(FightRecord fight)
+    {
+        var mode = _overlaySettings.ShareMode;
+        if (mode == ShareModes.Off || !StatsShareConfig.Configured) return;
+        if (SharedFight.From(fight, AppRelease.Current, withName: mode == ShareModes.WithName) is { } shared) _ = _share.ShareAsync(shared);
+    }
     private volatile OdEnergy? _od; // Od-Energie aus dem Spiel (null = noch nicht gesehen)
     private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromSeconds(10) }; // erst kurz nach dem Start, dann alle 6 h
     private UpdateInfo? _update;
@@ -143,6 +152,16 @@ public partial class MainWindow : Window
         var newNotes = PatchNotes.ToShow(PatchNotesWindow.All, lastSeen, AppRelease.Current);
         seenStore.Save(AppRelease.Current);
         if (newNotes.Count > 0) Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => ShowPatchNotes(newNotes, afterUpdate: lastSeen is not null));
+
+        // Bestenliste: einmal fragen (nur wenn eine Bestenliste eingerichtet ist). Ohne Antwort wird nichts gesendet.
+        if (StatsShareConfig.Configured && !_overlaySettings.ShareAsked)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
+            {
+                var mode = ShareConsentDialog.Ask();
+                ChangeOverlay(s => s with { ShareMode = mode, ShareAsked = true });
+            });
+        }
         if (_overlayStore.State == OverlaySettingsFileState.Foreign)
         {
             DetailText.Text = $"Hinweis: {_overlayStore.Path} ist nicht lesbar oder stammt nicht von diesem Programm – Standardwerte, die Datei bleibt unverändert.";
@@ -547,7 +566,9 @@ public partial class MainWindow : Window
             {
                 // Boss eintragen, dessen Leiste während des Kampfs zu sehen war (Treffer- und Uhrzeit sind beide UTC).
                 var boss = _bossSightings.LastOrDefault(s => s.At >= fight.Start && s.At <= fight.End.AddSeconds(15)).Name;
-                _fightStore.Save(boss is null ? fight : fight with { BossName = boss });
+                var saved = boss is null ? fight : fight with { BossName = boss };
+                _fightStore.Save(saved);
+                ShareFight(saved);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {

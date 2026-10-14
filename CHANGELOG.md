@@ -1,5 +1,8 @@
 # Patchnotes
 
+## Unveröffentlicht
+- Neu (freiwillig): Bestenliste – beim ersten Start fragt AionMeta einmal, ob du deine Bosskämpfe teilen möchtest (mit Namen, anonym oder nein). Gesendet werden nur deine eigenen Werte: Boss, Dauer, Schaden, DPS, Klasse, Version – nie Werte oder Namen anderer Spieler. Jederzeit änderbar unter Einstellungen → Allgemein.
+
 ## 0.0.6 – 14.10.2026
 - Neu: Gruppen-Lobby – bist du in einer Gruppe und läuft kein Kampf, zeigt AionMeta alle Mitglieder mit Stufe, GS und KS. Beitritt und Austritt siehst du sofort.
 - Neu: Od-Energie unten in der Fußzeile mit eigenem Kristall-Symbol – Grundwert und Zusatz zusammengerechnet (z. B. 575 = 565 + 10), in den Einstellungen umschaltbar auf „565 (+10)“ wie im Spiel. Erscheint nach dem Einloggen oder Einlösen; vorher ein ausgegrauter Kristall.
