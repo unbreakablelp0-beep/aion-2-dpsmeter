@@ -26,13 +26,15 @@ public sealed record SharedFight(
     [property: JsonPropertyName("dps")] int Dps,
     [property: JsonPropertyName("class")] string Class,
     [property: JsonPropertyName("version")] string Version,
-    [property: JsonPropertyName("player")] string? Player)
+    [property: JsonPropertyName("player")] string? Player,
+    [property: JsonPropertyName("gs")] int? GearScore = null,
+    [property: JsonPropertyName("ks")] long? CombatPower = null)
 {
     /// <summary>
     /// Aus einem gespeicherten Kampf: nur Bosskämpfe ab 10 s mit eigenem Schaden und bekannter Klasse. Der eigene Name
     /// nur bei <paramref name="withName"/>; sonst anonym.
     /// </summary>
-    public static SharedFight? From(FightRecord fight, string version, bool withName)
+    public static SharedFight? From(FightRecord fight, string version, bool withName, int? gearScore = null, long? combatPower = null)
     {
         ArgumentNullException.ThrowIfNull(fight);
         if (fight.BossName is not { Length: > 0 } boss || fight.Duration < TimeSpan.FromSeconds(10)) return null;
@@ -40,7 +42,8 @@ public sealed record SharedFight(
         if (own.ClassPrefix is not { } prefix || SkillClassMap.Describe(prefix) is not { } className) return null;
         var name = withName && own.Name is { Length: >= 2 and <= 24 } n ? n : null;
         return new SharedFight(boss.Length > 80 ? boss[..80] : boss, (int)Math.Min(7200, fight.Duration.TotalSeconds), own.Damage,
-            (int)Math.Clamp(Math.Round(own.Dps), 1, 50_000_000), className, version, name);
+            (int)Math.Clamp(Math.Round(own.Dps), 1, 50_000_000), className, version, name,
+            gearScore is >= 1 and <= 10_000 ? gearScore : null, combatPower is >= 1_000 and <= 10_000_000 ? combatPower : null);
     }
 
     public string ToJson() => JsonSerializer.Serialize(this);
@@ -54,4 +57,7 @@ public static class ShareModes
     public const string WithName = "Mit Name";
 
     public static readonly string[] All = [Off, Anonymous, WithName];
+
+    /// <summary>Stand der Einwilligung: 1 = Boss/Dauer/Schaden/DPS/Klasse/Version/Name, 2 = zusätzlich eigener GS und KS.</summary>
+    public const int ConsentVersion = 2;
 }

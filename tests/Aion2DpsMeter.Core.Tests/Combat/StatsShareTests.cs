@@ -24,6 +24,13 @@ public class StatsShareTests
         Assert.DoesNotContain("Korvin", shared.ToJson()); // andere Spieler nie
 
         Assert.Equal("Lyra", SharedFight.From(Fight("Feuerwächter", 60), "0.0.7", withName: true)!.Player);
+
+        // Eigener GS und eigene KS (Einwilligung ab Stand 2); unplausible Werte werden weggelassen.
+        var withPower = SharedFight.From(Fight("Feuerwächter", 60), "0.0.8", false, 2261, 98_631)!;
+        Assert.Equal(2261, withPower.GearScore);
+        Assert.Equal(98_631, withPower.CombatPower);
+        Assert.Contains("\"gs\":2261", withPower.ToJson());
+        Assert.Null(SharedFight.From(Fight("Feuerwächter", 60), "0.0.8", false, 0, 5)!.CombatPower);
         Assert.Null(SharedFight.From(Fight(null, 60), "0.0.7", false));          // kein Boss
         Assert.Null(SharedFight.From(Fight("Feuerwächter", 5), "0.0.7", false)); // zu kurz
     }

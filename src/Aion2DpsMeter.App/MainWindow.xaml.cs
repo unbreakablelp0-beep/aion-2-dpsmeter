@@ -109,7 +109,12 @@ public partial class MainWindow : Window
     {
         var mode = _overlaySettings.ShareMode;
         if (mode == ShareModes.Off || !StatsShareConfig.Configured) return;
-        if (SharedFight.From(fight, AppRelease.Current, withName: mode == ShareModes.WithName) is { } shared) _ = _share.ShareAsync(shared);
+        // Eigener GS/KS nur mit der Einwilligung ab Stand 2 (die ausdrücklich GS und KS nennt).
+        var own = _liveMeter.OwnActor;
+        var withPower = _overlaySettings.ShareConsent >= ShareModes.ConsentVersion && own is not null;
+        var gs = withPower ? _liveMeter.GearScoreOf(own!.Value) : null;
+        var ks = withPower ? _liveMeter.CombatPowerOf(own!.Value) : null;
+        if (SharedFight.From(fight, AppRelease.Current, withName: mode == ShareModes.WithName, gs, ks) is { } shared) _ = _share.ShareAsync(shared);
     }
     private volatile OdEnergy? _od; // Od-Energie aus dem Spiel (null = noch nicht gesehen)
     private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromSeconds(10) }; // erst kurz nach dem Start, dann alle 6 h
@@ -150,16 +155,20 @@ public partial class MainWindow : Window
         var seenStore = new SeenVersionStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Aion2DpsMeter", "version.json"));
         var lastSeen = seenStore.Load();
         var newNotes = PatchNotes.ToShow(PatchNotesWindow.All, lastSeen, AppRelease.Current);
+        // Update von 0.0.1–0.0.3 (die merkten sich die Version noch nicht): bestehender Nutzer → die letzten Versionen zeigen.
+        if (lastSeen is null && _overlayStore.State == OverlaySettingsFileState.Loaded) newNotes = PatchNotesWindow.All.Take(4).ToList();
         seenStore.Save(AppRelease.Current);
         if (newNotes.Count > 0) Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => ShowPatchNotes(newNotes, afterUpdate: lastSeen is not null));
 
         // Bestenliste: einmal fragen (nur wenn eine Bestenliste eingerichtet ist). Ohne Antwort wird nichts gesendet.
-        if (StatsShareConfig.Configured && !_overlaySettings.ShareAsked)
+        // Neu fragen, wenn noch nie gefragt – oder wenn jemand zugestimmt hat, die Einwilligung aber älter ist (jetzt mit GS/KS).
+        if (StatsShareConfig.Configured && (!_overlaySettings.ShareAsked ||
+            (_overlaySettings.ShareMode != ShareModes.Off && _overlaySettings.ShareConsent < ShareModes.ConsentVersion)))
         {
             Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
             {
                 var mode = ShareConsentDialog.Ask();
-                ChangeOverlay(s => s with { ShareMode = mode, ShareAsked = true });
+                ChangeOverlay(s => s with { ShareMode = mode, ShareAsked = true, ShareConsent = ShareModes.ConsentVersion });
             });
         }
         if (_overlayStore.State == OverlaySettingsFileState.Foreign)

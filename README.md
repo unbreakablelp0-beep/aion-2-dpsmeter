@@ -28,7 +28,7 @@ Ein Overlay-DPS-Meter für **AION 2 Global / EU** – C#, .NET 10, WPF, Windows 
   - Tray-Symbol und Tastenkürzel.
 - Alle Daten bleiben **lokal** unter `Dokumente\Aion2DpsMeter` (Kämpfe, Einstellungen, Aufnahmen).
 - **Bestenliste (freiwillig, Standard aus):** Wer zustimmt, teilt nach Bosskämpfen nur die eigenen Werte (Boss, Dauer,
-  Schaden, DPS, Klasse, Version, auf Wunsch den eigenen Namen) mit der Bestenliste auf der Webseite. Nie Werte oder Namen
+  Schaden, DPS, Klasse, eigener GS und eigene KS, Version, auf Wunsch den eigenen Namen) mit der Bestenliste auf der Webseite. Nie Werte oder Namen
   anderer Spieler, keine Aufnahmen, kein Chat. Die Datenbank-Regeln stehen in `tools/supabase-setup.sql`.
 - **Updates:** Der Meter fragt GitHub nach neuen Releases (abschaltbar, es werden keine Daten gesendet). Ein Klick auf den
   Hinweis im Overlay lädt die neue Version, prüft die SHA-256 und startet neu. Die EXE ist nicht signiert, deshalb kann

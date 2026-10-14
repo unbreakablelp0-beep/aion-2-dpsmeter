@@ -336,6 +336,17 @@ public sealed class LiveCombatMeter
         }
     }
 
+    /// <summary>Ausrüstungswert (GS) eines Spielers aus der Gruppenliste oder null (nicht in einer Gruppe / unbekannt).</summary>
+    public int? GearScoreOf(uint actor)
+    {
+        lock (_lock)
+        {
+            return _party is { } party && _names.TryGetValue(actor, out var name) && party.PowerOf(name) is { GearScore: > 0 } p
+                ? p.GearScore
+                : null;
+        }
+    }
+
     /// <summary>Schaden je Sekunde eines Spielers im aktuellen Kampf (ab Kampfbeginn); null ohne Treffer.</summary>
     public IReadOnlyList<long>? DamagePerSecond(uint actor)
     {

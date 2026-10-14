@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Aion2DpsMeter.Core.Combat;
 
@@ -26,7 +26,7 @@ public sealed class ShareConsentDialog : Window
         {
             Text = "Nach jedem Bosskampf sendet AionMeta dann eine kurze Zusammenfassung an die Bestenliste auf der AionMeta-Webseite:\n" +
                    "• Boss, Kampfdauer, dein Schaden und deine DPS\n" +
-                   "• deine Klasse und die AionMeta-Version\n" +
+                   "• deine Klasse, dein GS, deine KS und die AionMeta-Version\n" +
                    "• dein Charaktername – nur, wenn du „mit meinem Namen“ wählst\n\n" +
                    "Nicht gesendet werden: Namen oder Werte anderer Spieler, Aufnahmen, Chat oder sonst etwas von deinem PC.\n" +
                    "Du kannst das jederzeit unter Einstellungen → Allgemein ändern.",

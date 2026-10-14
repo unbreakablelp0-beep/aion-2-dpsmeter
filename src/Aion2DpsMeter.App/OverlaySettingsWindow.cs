@@ -78,7 +78,7 @@ public sealed class OverlaySettingsWindow : Window
             Setting("Was ist neu", ActionButton("Anzeigen", () => _showPatchNotes?.Invoke()), "Patchnotes: was sich in den letzten Versionen geändert hat."),
             Setting("Bestenliste (Teilen)", ShareChoice(),
                 "Aus (Standard): nichts wird gesendet. Anonym / Mit Name: nach jedem Bosskampf gehen Boss, Dauer, dein Schaden, deine DPS, " +
-                "Klasse und Version an die Bestenliste der AionMeta-Webseite – bei „Mit Name“ zusätzlich dein Charaktername. Nie Werte oder Namen anderer Spieler."),
+                "Klasse, dein GS, deine KS und die Version an die Bestenliste der AionMeta-Webseite – bei „Mit Name“ zusätzlich dein Charaktername. Nie Werte oder Namen anderer Spieler."),
             Setting("Auf Updates prüfen", Toggle(() => _get().CheckForUpdates, v => Change(s => s with { CheckForUpdates = v })),
                 $"Du hast {Aion2DpsMeter.Core.Updates.AppRelease.Current}. Fragt beim Start und alle 6 Stunden bei GitHub nach einer neuen Version " +
                 "(nur lesen, es werden keine Daten gesendet). Gibt es eine, erscheint im Overlay ein Hinweis – ein Klick darauf installiert sie nach Rückfrage."),
@@ -634,7 +634,7 @@ public sealed class OverlaySettingsWindow : Window
         var box = new ComboBox { Width = 150, ItemsSource = ShareModes.All, SelectedItem = _get().ShareMode };
         box.SelectionChanged += (_, _) =>
         {
-            if (box.SelectedItem is string mode) Change(s => s with { ShareMode = mode, ShareAsked = true });
+            if (box.SelectedItem is string mode) Change(s => s with { ShareMode = mode, ShareAsked = true, ShareConsent = ShareModes.ConsentVersion });
         };
         return box;
     }

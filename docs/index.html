@@ -191,6 +191,26 @@
   .lb-tabs button:hover { color: var(--text); border-color: rgba(155,108,255,.4); }
   .lb-tabs button.on { color: #fff; background: rgba(155,108,255,.25); border-color: rgba(155,108,255,.6); }
   .lb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lb-filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .lb-filters label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+  .lb-filters select { min-width: 190px; padding: 9px 12px; border-radius: 10px; background: var(--panel); color: var(--text); border: 1px solid var(--line); font: 500 14px Inter, sans-serif; }
+  .lb-filters select:focus { outline: none; border-color: rgba(155,108,255,.6); }
+  .lb-scroll { overflow-x: auto; padding: 6px 8px; }
+  .lb-table { width: 100%; border-collapse: collapse; font-size: 14px; white-space: nowrap; }
+  .lb-table th { text-align: right; color: var(--dim); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .lb-table td { text-align: right; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04); font-variant-numeric: tabular-nums; }
+  .lb-table th.l, .lb-table td.l { text-align: left; }
+  .lb-table tbody tr { transition: background .15s; }
+  .lb-table tbody tr:hover { background: rgba(155,108,255,.07); }
+  .lb-table td.rank { color: var(--dim); font-weight: 700; text-align: center; width: 36px; }
+  .lb-table tr.p1 td.rank { color: var(--gold); } .lb-table tr.p2 td.rank { color: #c9d1dc; } .lb-table tr.p3 td.rank { color: #d9935a; }
+  .lb-table tr.p1 { background: linear-gradient(90deg, rgba(242,193,78,.08), transparent 60%); }
+  .lb-table td.dps { font: 700 16px var(--num); color: var(--teal); }
+  .lb-table td.dim { color: var(--dim); }
+  .lb-player { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; }
+  .lb-player .ico { width: 20px; height: 20px; }
+  .lb-up { color: #4cd964; font-weight: 700; } .lb-down { color: #ff7070; font-weight: 700; }
+  .lb-hint { color: var(--dim); font-weight: 500; font-size: 13px; margin-left: 6px; }
   .lb-week { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 16px 20px; border-radius: var(--radius);
     background: linear-gradient(135deg, rgba(242,193,78,.16), rgba(155,108,255,.12)); border: 1px solid rgba(242,193,78,.4); }
   .lb-week .crown { font-size: 30px; }
@@ -389,11 +409,28 @@
       <p class="sub">Live aus den Kämpfen aller, die das Teilen in AionMeta eingeschaltet haben – freiwillig, nur eigene Werte.</p>
       <div class="lb-totals" id="lb-totals"></div>
       <div class="lb-week" id="lb-week" hidden></div>
-      <div class="lb-tabs" id="lb-tabs"></div>
-      <div class="lb-grid">
-        <div class="lb-card"><div class="lb-title">Top-DPS</div><div id="lb-top"><div class="lb-empty">Wird geladen …</div></div></div>
+      <div class="lb-filters">
+        <label>Boss<select id="f-boss"></select></label>
+        <label>Klasse<select id="f-class"><option value="">Alle</option></select></label>
+        <label>KS-Bereich<select id="f-ks">
+          <option value="">Alle</option><option value="0-50000">bis 50K</option><option value="50000-100000">50K – 100K</option>
+          <option value="100000-150000">100K – 150K</option><option value="150000-99999999">über 150K</option></select></label>
+      </div>
+      <div class="lb-card lb-scroll">
+        <table class="lb-table">
+          <thead><tr><th>#</th><th class="l">Spieler</th><th>GS</th><th>KS</th><th>DPS</th><th>Schaden</th><th>Zeit</th><th>Datum</th></tr></thead>
+          <tbody id="lb-body"><tr><td colspan="8" class="lb-empty">Wird geladen …</td></tr></tbody>
+        </table>
+      </div>
+      <div class="lb-card lb-scroll" style="margin-top:16px">
+        <div class="lb-title">Klassen-Statistik bei diesem Boss <span class="lb-hint">letzte 7 Tage</span></div>
+        <table class="lb-table">
+          <thead><tr><th>#</th><th class="l">Klasse</th><th>Werte</th><th>Top 10 %</th><th>Top 25 %</th><th>Median</th><th>Höchstwert</th><th>Median ggü. Vorwoche</th></tr></thead>
+          <tbody id="lb-stats"><tr><td colspan="8" class="lb-empty">Wird geladen …</td></tr></tbody>
+        </table>
+      </div>
+      <div class="lb-grid" style="margin-top:16px">
         <div class="lb-card"><div class="lb-title">Schnellste Kills</div><div id="lb-fast"></div></div>
-        <div class="lb-card"><div class="lb-title">Klassen bei diesem Boss</div><div id="lb-classes"></div></div>
         <div class="lb-card"><div class="lb-title">Klassen-Rangliste (alle Bosse)</div><div id="lb-ranking"></div></div>
       </div>
     </div>
@@ -409,7 +446,7 @@
         <details><summary>Ist das erlaubt?</summary><p>Der Meter ist inoffiziell und steht in keiner Verbindung zu NCSOFT. Die Nutzungsbedingungen untersagen nicht autorisierte Programme – Nutzung auf eigene Gefahr.</p></details>
         <details><summary>Wie bekomme ich Updates?</summary><p>Automatisch: Gibt es eine neue Version, erscheint oben im Overlay ein goldener Hinweis. Ein Klick lädt sie, prüft sie und startet neu.</p></details>
         <details><summary>Warum sehe ich bei Fremden keine Kampfkraft?</summary><p>Das Spiel schickt die Kampfkraft nur für dich und deine Gruppenmitglieder.</p></details>
-        <details><summary>Wo werden meine Daten gespeichert?</summary><p>Lokal unter <code>Dokumente\Aion2DpsMeter</code>. Hochgeladen wird nur, wenn du das Teilen für die Bestenliste einschaltest – und dann nur deine eigenen Bosskampf-Werte (Boss, Dauer, Schaden, DPS, Klasse, Version, auf Wunsch dein Name). Nie Werte oder Namen anderer Spieler, keine Aufnahmen, kein Chat.</p></details>
+        <details><summary>Wo werden meine Daten gespeichert?</summary><p>Lokal unter <code>Dokumente\Aion2DpsMeter</code>. Hochgeladen wird nur, wenn du das Teilen für die Bestenliste einschaltest – und dann nur deine eigenen Bosskampf-Werte (Boss, Dauer, Schaden, DPS, Klasse, dein GS und deine KS, Version, auf Wunsch dein Name). Nie Werte oder Namen anderer Spieler, keine Aufnahmen, kein Chat.</p></details>
         <details><summary>Wie komme ich in die Bestenliste?</summary><p>Beim ersten Start fragt AionMeta einmal, ob du teilen möchtest: mit Namen, anonym oder gar nicht. Ändern kannst du das jederzeit unter Einstellungen → Allgemein → „Bestenliste (Teilen)“. Standard ist „Aus“.</p></details>
         <details><summary>Was brauche ich?</summary><p>Windows 11 (64 Bit) und Npcap. Windows 10 sollte ebenfalls funktionieren.</p></details>
       </div>
@@ -443,7 +480,13 @@
     Bogen:       { c: "#5ea04e", p: [["M7,2.5 C17,6 17,18 7,21.5 M7,2.5 L7,21.5 M3,12 L20,12 M17,9.5 L20,12 L17,14.5", 0]] },
     Kleriker:    { c: "#d8b040", p: [["M10,3 H14 V10 H21 V14 H14 V21 H10 V14 H3 V10 H10 Z", 1]] },
     Gladiator:   { c: "#c06a3a", p: [["M12,2 L14,5 L14,14 L17.5,14 L17.5,16 L13.5,16 L13.5,20 L14.5,22 L9.5,22 L10.5,20 L10.5,16 L6.5,16 L6.5,14 L10,14 L10,5 Z", 1]] },
+    Templer:     { c: "#8a8fa6", p: [["M12,2 L20,5 L20,11 C20,16 16.5,19.5 12,22 C7.5,19.5 4,16 4,11 L4,5 Z", 1]] },
+    Magier:      { c: "#4a7fd0", p: [["M12,2 L14.6,8.9 L22,9.3 L16.2,13.9 L18.2,21 L12,17 L5.8,21 L7.8,13.9 L2,9.3 L9.4,8.9 Z", 1]] },
+    Kantor:      { c: "#c85a7a", p: [["M15.5,8.5 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0", 1], ["M13,11 L5,21", 0]] },
   };
+  // Klassennamen aus der Bestenliste → Symbol-Schlüssel
+  const CLASS_KEY = { "Bogenschütze": "Bogen", "Beschwörer": "Beschwoerer" };
+  const classIcon = (name) => { const key = CLASS_KEY[name] || name; return CLASSES[key] ? icon(key) : ""; };
   const icon = (k) => {
     const cl = CLASSES[k];
     const shapes = cl.p.map(([d, f]) => f
@@ -541,9 +584,18 @@
     const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[ch]));
     const k = (v) => v >= 1e6 ? (v / 1e6).toLocaleString("de-DE", { maximumFractionDigits: 2 }) + "M" : v >= 1e3 ? (v / 1e3).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + "K" : String(v);
     const mm = (s) => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
-    const top = document.getElementById("lb-top"), cls = document.getElementById("lb-classes"), tabs = document.getElementById("lb-tabs");
+    const body = document.getElementById("lb-body"), statsBody = document.getElementById("lb-stats");
+    const fBoss = document.getElementById("f-boss"), fClass = document.getElementById("f-class"), fKs = document.getElementById("f-ks");
+    const num = (v) => v == null ? "–" : Number(v).toLocaleString("de-DE");
+    const day = (s) => new Date(s).toLocaleDateString("de-DE", { day: "2-digit", month: "short" });
     try {
-      const [totals, board, stats] = await Promise.all([get("totals?select=*"), get("leaderboard?select=*&order=dps.desc"), get("class_stats?select=*")]);
+      const optionalFirst = async (paths) => { for (const p of paths) { try { return await get(p); } catch { } } return []; };
+      const [totals, board, stats] = await Promise.all([
+        get("totals?select=*"),
+        // Erweiterung 2 (mit GS/KS) bevorzugt, sonst die einfache Liste
+        optionalFirst(["leaderboard_table?select=*&order=dps.desc", "leaderboard?select=*&order=dps.desc"]),
+        optionalFirst(["class_week_stats?select=*", "class_stats?select=*"]),
+      ]);
       // Erweiterung 1 (falls in Supabase eingerichtet): schnellste Kills, Klassen-Rangliste, Spieler der Woche.
       const optional = async (path) => { try { return await get(path); } catch { return null; } };
       const [fast, ranking, week] = await Promise.all([optional("fastest_kills?select=*&order=duration_s.asc"), optional("class_ranking?select=*&order=avg_dps.desc"), optional("player_of_week?select=*")]);
@@ -568,30 +620,39 @@
         `<div><b>${Number(t.fights).toLocaleString("de-DE")}</b>geteilte Kämpfe</div><div><b>${t.bosses}</b>Bosse</div>`;
       const bosses = [...new Set(board.map(b => b.boss))];
       if (bosses.length === 0) {
-        top.innerHTML = `<div class="lb-empty">Noch keine Kämpfe geteilt – sei der Erste! Schalte in AionMeta unter Einstellungen → Allgemein „Bestenliste (Teilen)“ ein.</div>`;
-        cls.innerHTML = `<div class="lb-empty">Sobald Kämpfe da sind, erscheint hier der Klassenvergleich.</div>`;
+        body.innerHTML = `<tr><td colspan="8" class="lb-empty l">Noch keine Kämpfe geteilt – sei der Erste! Schalte in AionMeta unter Einstellungen → Allgemein „Bestenliste (Teilen)“ ein.</td></tr>`;
+        statsBody.innerHTML = `<tr><td colspan="8" class="lb-empty l">Sobald Kämpfe da sind, erscheint hier die Klassen-Statistik.</td></tr>`;
         fastEl.innerHTML = `<div class="lb-empty">Noch keine Kills.</div>`;
+        fBoss.innerHTML = `<option>–</option>`;
         return;
       }
-      const show = (boss) => {
-        tabs.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.boss === boss));
-        const rows = board.filter(b => b.boss === boss).slice(0, 10);
-        top.innerHTML = rows.map((r, i) => `<div class="lb-row"><span class="lb-rank ${i === 0 ? "gold" : ""}">${i + 1}</span>
-          <span class="lb-name">${esc(r.player_name)}<small>${esc(r.class)}</small></span><span class="lb-dps">${k(r.dps)}</span><span class="lb-time">${mm(r.duration_s)}</span></div>`).join("");
+      fBoss.innerHTML = bosses.map(b => `<option value="${esc(b)}">${esc(b)}</option>`).join("");
+      fClass.innerHTML = `<option value="">Alle</option>` + [...new Set(board.map(b => b.class))].sort().map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+      const render = () => {
+        const boss = fBoss.value, cls = fClass.value, [lo, hi] = (fKs.value || "0-99999999").split("-").map(Number);
+        const rows = board.filter(r => r.boss === boss && (!cls || r.class === cls) && (!fKs.value || (r.ks != null && r.ks >= lo && r.ks < hi))).slice(0, 50);
+        body.innerHTML = rows.length ? rows.map((r, i) => `<tr class="p${i + 1}"><td class="rank">${i + 1}</td>
+          <td class="l"><span class="lb-player">${classIcon(r.class)}${esc(r.player_name)}</span></td>
+          <td>${num(r.gs)}</td><td>${r.ks == null ? "–" : k(r.ks)}</td><td class="dps">${k(r.dps)}</td><td>${r.damage == null ? "–" : k(r.damage)}</td>
+          <td class="dim">${mm(r.duration_s)}</td><td class="dim">${day(r.created_at)}</td></tr>`).join("")
+          : `<tr><td colspan="8" class="lb-empty l">Keine Einträge für diese Auswahl.</td></tr>`;
+        const cs = stats.filter(s => s.boss === boss).map(s => ({ cls: s.class, n: s.values_count ?? s.fights, t10: s.top10, t25: s.top25,
+          med: s.median ?? s.avg_dps, best: s.best ?? s.best_dps, prev: s.median_last_week })).sort((a, b) => b.med - a.med);
+        statsBody.innerHTML = cs.length ? cs.map((s, i) => {
+          const change = s.prev ? (s.med - s.prev) / s.prev * 100 : null;
+          const trend = change == null ? `<span class="dim">–</span>` : `<span class="${change >= 0 ? "lb-up" : "lb-down"}">${change >= 0 ? "+" : ""}${change.toLocaleString("de-DE", { maximumFractionDigits: 1 })} %</span>`;
+          return `<tr class="p${i + 1}"><td class="rank">${i + 1}</td><td class="l"><span class="lb-player">${classIcon(s.cls)}${esc(s.cls)}</span></td>
+            <td>${num(s.n)}</td><td>${s.t10 == null ? "–" : k(s.t10)}</td><td>${s.t25 == null ? "–" : k(s.t25)}</td><td class="dps">${k(s.med)}</td><td>${k(s.best)}</td><td>${trend}</td></tr>`;
+        }).join("") : `<tr><td colspan="8" class="lb-empty l">In den letzten 7 Tagen keine Kämpfe bei diesem Boss.</td></tr>`;
         const kills = (fast || []).filter(f => f.boss === boss).slice(0, 10);
         fastEl.innerHTML = kills.length ? kills.map((r, i) => `<div class="lb-row"><span class="lb-rank ${i === 0 ? "gold" : ""}">${i + 1}</span>
           <span class="lb-name">${esc(r.player_name)}<small>${esc(r.class)} · ${k(r.dps)} DPS</small></span><span class="lb-dps">${mm(r.duration_s)}</span><span class="lb-time"></span></div>`).join("")
           : `<div class="lb-empty">Noch keine Kills.</div>`;
-        const cs = stats.filter(s => s.boss === boss).sort((a, b) => b.avg_dps - a.avg_dps);
-        const max = Math.max(...cs.map(s => s.avg_dps), 1);
-        cls.innerHTML = cs.map(s => `<div class="lb-row" style="grid-template-columns:1fr auto"><span class="lb-name">${esc(s.class)}<small>${s.fights} Kämpfe · Bestwert ${k(s.best_dps)}</small>
-          <div class="lb-bar" style="width:${(s.avg_dps / max * 100).toFixed(0)}%"></div></span><span class="lb-dps">Ø ${k(s.avg_dps)}</span></div>`).join("");
       };
-      tabs.innerHTML = bosses.map(b => `<button data-boss="${esc(b)}">${esc(b)}</button>`).join("");
-      tabs.querySelectorAll("button").forEach(b => b.addEventListener("click", () => show(b.dataset.boss)));
-      show(bosses[0]);
+      [fBoss, fClass, fKs].forEach(s => s.addEventListener("change", render));
+      render();
     } catch (e) {
-      top.innerHTML = `<div class="lb-empty">Die Bestenliste ist gerade nicht erreichbar.</div>`;
+      body.innerHTML = `<tr><td colspan="8" class="lb-empty l">Die Bestenliste ist gerade nicht erreichbar.</td></tr>`;
     }
   })();
 
