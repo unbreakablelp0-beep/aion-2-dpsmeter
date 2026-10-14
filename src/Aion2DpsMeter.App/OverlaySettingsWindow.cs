@@ -31,6 +31,8 @@ public sealed class OverlaySettingsWindow : Window
     private readonly Func<IReadOnlyList<Aion2DpsMeter.Core.Events.WorldBoss>> _worldBosses;
     private readonly Func<IReadOnlyList<Aion2DpsMeter.Core.Events.WorldBoss>, string?> _setWorldBosses;
 
+    private readonly Action? _showPatchNotes;
+
     public OverlaySettingsWindow(
         Func<OverlaySettings> get,
         Action<Func<OverlaySettings, OverlaySettings>> change,
@@ -44,8 +46,10 @@ public sealed class OverlaySettingsWindow : Window
         Action showAdvanced,
         Action exit,
         IReadOnlyList<string> hotkeys,
-        IReadOnlyList<string> failedHotkeys)
+        IReadOnlyList<string> failedHotkeys,
+        Action? showPatchNotes = null)
     {
+        _showPatchNotes = showPatchNotes;
         _get = get;
         _change = change;
         _worldBosses = worldBosses;
@@ -71,6 +75,7 @@ public sealed class OverlaySettingsWindow : Window
                  "nicht im exklusiven Vollbild. Werte nach Community-Hypothese (abgeglichen, nicht offiziell)."),
             Setting("Overlay-Position", ActionButton("Zurücksetzen", () => Change(s => s with { Left = 40, Top = 120, Width = 360 })),
                 "Holt das Overlay an die Standardstelle oben links zurück."),
+            Setting("Was ist neu", ActionButton("Anzeigen", () => _showPatchNotes?.Invoke()), "Patchnotes: was sich in den letzten Versionen geändert hat."),
             Setting("Auf Updates prüfen", Toggle(() => _get().CheckForUpdates, v => Change(s => s with { CheckForUpdates = v })),
                 $"Du hast {Aion2DpsMeter.Core.Updates.AppRelease.Current}. Fragt beim Start und alle 6 Stunden bei GitHub nach einer neuen Version " +
                 "(nur lesen, es werden keine Daten gesendet). Gibt es eine, erscheint im Overlay ein Hinweis – ein Klick darauf installiert sie nach Rückfrage."),

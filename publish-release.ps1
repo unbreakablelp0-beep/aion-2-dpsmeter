@@ -1,6 +1,7 @@
 ﻿# Baut die öffentliche Release-EXE (ohne eingebettete Spielgrafiken) für GitHub und schreibt die Prüfsumme (SHA256SUMS).
 # Version aus Directory.Build.props. Ausgabe: artifacts\<Version>\release. Ein vorhandener Ausgabeordner wird nie überschrieben.
-# Danach auf GitHub ein Release mit Tag „v<Version>“ anlegen und BEIDE Dateien anhängen (EXE und SHA256SUMS).
+# Danach auf GitHub ein Release mit Tag „v<Version>“ anlegen, BEIDE Dateien anhängen (EXE und SHA256SUMS) und den Text
+# aus PATCHNOTES.txt als Beschreibung einfügen. Patchnotes vorher in CHANGELOG.md eintragen.
 param(
     [string]$Output
 )
@@ -23,6 +24,14 @@ try {
     Copy-Item "$buildDir\out\AionMeta.exe" (Join-Path $Output $name)
     $hash = (Get-FileHash (Join-Path $Output $name) -Algorithm SHA256).Hash.ToLowerInvariant()
     [IO.File]::WriteAllText((Join-Path $Output 'SHA256SUMS'), "$hash  $name`n", [Text.UTF8Encoding]::new($false))
+    # Patchnotes dieser Version aus CHANGELOG.md als Text fürs GitHub-Release (Beschreibung).
+    $section = @(); $inside = $false
+    foreach ($line in Get-Content (Join-Path $PSScriptRoot 'CHANGELOG.md') -Encoding utf8) {
+        if ($line -match '^##\s+v?(\d+\.\d+\.\d+)') { $inside = ($Matches[1] -eq $version); continue }
+        if ($inside -and $line.StartsWith('- ')) { $section += $line }
+    }
+    if ($section.Count -eq 0) { Write-Warning "Keine Patchnotes für $version in CHANGELOG.md." }
+    [IO.File]::WriteAllText((Join-Path $Output 'PATCHNOTES.txt'), (($section -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
     Write-Host "Fertig: $Output"
     Write-Host "Tag: v$version  Dateien: $name, SHA256SUMS"
 }

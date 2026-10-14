@@ -24,6 +24,11 @@
     <Using Remove="System.Drawing" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Patchnotes („Was ist neu“) – eine Quelle für Programm, GitHub-Release und Webseite. -->
+    <EmbeddedResource Include="..\..\CHANGELOG.md" LogicalName="CHANGELOG.md" />
+  </ItemGroup>
+
   <!--
     Variante „persoenlich“ (nur mit -p:EmbedPersonalIcons=true, siehe publish-persoenlich.ps1): bettet die Klassenbilder
     aus dem lokalen Icon-Ordner beim Bauen ein. Die Bilder werden NICHT ins Projekt kopiert. Die Standard-EXE enthält

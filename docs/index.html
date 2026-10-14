@@ -149,6 +149,12 @@
   .step b { display: block; margin-bottom: 4px; }
   .step span { color: var(--dim); font-size: 14.5px; }
 
+  .notes { display: grid; gap: 12px; }
+  .note-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
+  .note-card:first-child { border-color: rgba(155,108,255,.4); }
+  .note-head { font-weight: 700; color: var(--violet-2); margin-bottom: 6px; }
+  .note-head .new { font-size: 11px; font-weight: 800; color: #1b1406; background: var(--gold); border-radius: 6px; padding: 1px 7px; margin-left: 8px; vertical-align: 2px; }
+  .note-card ul { margin: 0; padding-left: 20px; color: var(--dim); }
   .faq { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   details { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
   details[open] { border-color: rgba(155,108,255,.35); }
@@ -194,6 +200,7 @@
       <a href="#funktionen">Funktionen</a>
       <a href="#updates">Updates</a>
       <a href="#installation">Installation</a>
+      <a href="#patchnotes">Patchnotes</a>
       <a href="#fragen">Fragen</a>
       <a class="nav-dl dl-link" href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest">Download</a>
     </nav>
@@ -289,6 +296,15 @@
         <div class="step"><b>Starten</b><span>EXE öffnen. Warnt Windows: „Weitere Informationen“ → „Trotzdem ausführen“.</span></div>
         <div class="step"><b>Kämpfen</b><span>AION 2 starten – das Overlay zeigt deinen Kampf automatisch.</span></div>
       </div>
+    </div>
+  </section>
+
+  <section id="patchnotes">
+    <div class="wrap">
+      <div class="eyebrow">Patchnotes</div>
+      <h2>Was ist neu?</h2>
+      <p class="sub">Dieselben Notizen siehst du nach jedem Update direkt in AionMeta.</p>
+      <div class="notes" id="notes"><div class="note-card"><div class="note-head">Wird geladen …</div></div></div>
     </div>
   </section>
 
@@ -401,6 +417,25 @@
   };
   tick();
   setInterval(tick, 1000);
+
+  // ---- Patchnotes aus CHANGELOG.md (dieselbe Quelle wie im Programm) ----
+  (async () => {
+    const box = document.getElementById("notes");
+    const esc = (s) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[ch]));
+    try {
+      const r = await fetch("https://raw.githubusercontent.com/unbreakablelp0-beep/aion-2-dpsmeter/main/CHANGELOG.md");
+      if (!r.ok) throw new Error();
+      const notes = [];
+      for (const line of (await r.text()).split(/\r?\n/)) {
+        if (/^##\s+v?\d+\.\d+\.\d+/.test(line)) notes.push({ title: line.replace(/^##\s+/, ""), items: [] });
+        else if (notes.length && line.startsWith("- ")) notes[notes.length - 1].items.push(line.slice(2));
+      }
+      box.innerHTML = notes.slice(0, 5).map((n, i) =>
+        `<div class="note-card"><div class="note-head">${esc(n.title)}${i === 0 ? "<span class=\"new\">NEU</span>" : ""}</div><ul>${n.items.map(it => `<li>${esc(it)}</li>`).join("")}</ul></div>`).join("");
+    } catch (e) {
+      box.innerHTML = `<div class="note-card">Patchnotes findest du auf <a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/blob/main/CHANGELOG.md">GitHub</a>.</div>`;
+    }
+  })();
 
   // ---- neueste Version und direkter EXE-Link von GitHub ----
   (async () => {

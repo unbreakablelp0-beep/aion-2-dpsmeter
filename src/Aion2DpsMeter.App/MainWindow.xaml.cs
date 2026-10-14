@@ -136,6 +136,12 @@ public partial class MainWindow : Window
             _update = await _updates.CheckAsync(CancellationToken.None);
         };
         _updateTimer.Start();
+        // Patchnotes: beim ersten Start einer neuen Version einmal „Was ist neu“ zeigen.
+        var seenStore = new SeenVersionStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Aion2DpsMeter", "version.json"));
+        var lastSeen = seenStore.Load();
+        var newNotes = PatchNotes.ToShow(PatchNotesWindow.All, lastSeen, AppRelease.Current);
+        seenStore.Save(AppRelease.Current);
+        if (newNotes.Count > 0) Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => ShowPatchNotes(newNotes, afterUpdate: lastSeen is not null));
         if (_overlayStore.State == OverlaySettingsFileState.Foreign)
         {
             DetailText.Text = $"Hinweis: {_overlayStore.Path} ist nicht lesbar oder stammt nicht von diesem Programm – Standardwerte, die Datei bleibt unverändert.";
@@ -407,7 +413,8 @@ public partial class MainWindow : Window
             showAdvanced: ShowAdvancedWindow,
             exit: ExitApp,
             hotkeys: _hotkeys?.Registered ?? [],
-            failedHotkeys: _hotkeys?.Failed ?? []);
+            failedHotkeys: _hotkeys?.Failed ?? [],
+            showPatchNotes: () => ShowPatchNotes(PatchNotesWindow.All.Take(5).ToList(), afterUpdate: false));
         _settingsWindow.Show();
     }
 
@@ -561,6 +568,8 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Beendet das Programm sauber: Aufnahme stoppen, Einstellungen speichern, Fenster schließen.</summary>
+    /// <summary>„Was ist neu“-Fenster zeigen.</summary>
+    private void ShowPatchNotes(IReadOnlyList<PatchNote> notes, bool afterUpdate) => new PatchNotesWindow(notes, afterUpdate).Show();
     /// <summary>Hinweiszeile fürs Overlay: Fortschritt eines laufenden Updates oder „neue Version verfügbar“.</summary>
     private string? UpdateLine() =>
         _updateProgress ?? (_update is { } u && _overlaySettings.CheckForUpdates ? $"⬆ Neue Version {u.Tag} verfügbar – hier klicken zum Aktualisieren" : null);
