@@ -110,6 +110,10 @@ public sealed class OverlaySettingsWindow : Window
             Setting("Gruppenhinweis anzeigen", Toggle(() => _get().ShowPartyHint, v => Change(s => s with { ShowPartyHint = v })),
                 "Zeigt „Gruppe 2/5 erkannt“, wenn das Spiel eine größere Gruppe meldet, als Namen bekannt sind – nur im Kampf und bis " +
                 "60 s danach. Fehlende Namen kommen beim Teleport bzw. wenn die Mitglieder ins Blickfeld kommen."),
+            Setting("Od-Energie anzeigen", Toggle(() => _get().ShowOd, v => Change(s => s with { ShowOd = v })),
+                "Zusatz-Od-Energie (der blaue Wert, z. B. +95) unten in der Fußzeile. Erscheint, sobald das Spiel ihn schickt (beim Einloggen oder Einlösen)."),
+            Setting("Gruppen-Lobby anzeigen", Toggle(() => _get().ShowLobby, v => Change(s => s with { ShowLobby = v })),
+                "Wenn du in einer Gruppe bist und gerade kein Kampf läuft: alle Mitglieder mit Stufe, GS und KS – Beitritt und Austritt sofort sichtbar."),
             Setting("Ping anzeigen", Toggle(() => _get().ShowPing, v => Change(s => s with { ShowPing = v })),
                 "Ping zum Spielserver unten in der Fußzeile, grün/gelb/rot. Rein passiv aus der Spielverbindung gemessen – es wird nichts gesendet."),
             Setting("Automatisch ausblenden", AutoHideChoice(),

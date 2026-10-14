@@ -15,6 +15,8 @@ namespace Aion2DpsMeter.Core.Combat;
 /// <param name="HideTinyRows">Spieler unter 1 % Anteil ausblenden.</param>
 /// <param name="ShowAllPlayers">Veraltet (v13–v17), wird nicht mehr verwendet.</param>
 /// <param name="ShowPartyHint">Hinweis „Gruppe x/y erkannt“ zeigen, wenn Namen fehlen (nur im und bis 60 s nach dem Kampf); Standard an.</param>
+/// <param name="ShowOd">Zusatz-Od-Energie (blauer Wert) in der Fußzeile zeigen; Standard an.</param>
+/// <param name="ShowLobby">Gruppen-Lobby (Mitglieder mit Stufe, GS, KS) zeigen, solange kein Kampf läuft; Standard an.</param>
 /// <param name="ShowPing">Ping zum Spielserver in der Fußzeile zeigen (passiv gemessen); Standard an.</param>
 /// <param name="CheckForUpdates">Beim Start und alle 6 h bei GitHub nach einer neuen Version fragen (nur lesen); Standard an.</param>
 /// <param name="Contrast">Lesbarkeit: „Normal“, „Hoch“ (Standard) oder „Sehr hoch“ – hellere Schrift, Schatten, Mindest-Deckkraft.</param>
@@ -57,7 +59,9 @@ public sealed record OverlaySettings(
     string Contrast = OverlayContrast.High,
     bool ShowPartyHint = true,
     bool CheckForUpdates = true,
-    bool ShowPing = true)
+    bool ShowPing = true,
+    bool ShowOd = true,
+    bool ShowLobby = true)
 {
     /// <summary>Wählbare Zeiten fürs automatische Ausblenden (0 = aus).</summary>
     public static readonly int[] AutoHideChoices = [0, 10, 30, 60, 120];

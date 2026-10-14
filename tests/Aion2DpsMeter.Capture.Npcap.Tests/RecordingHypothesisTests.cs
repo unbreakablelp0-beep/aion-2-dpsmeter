@@ -530,6 +530,28 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
         analyzer.GetResult();
     }
 
+    /// <summary>Wie live: Od-Zusatzwerte und die Lobby-Mitglieder (maskiert, mit Stufe/GS/KS) über den Decoder.</summary>
+    [Fact]
+    public async Task ReadsOdAndLobbyLikeLive()
+    {
+        var path = Environment.GetEnvironmentVariable(PathVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            output.WriteLine($"Nicht ausgeführt: {PathVariable} ist nicht gesetzt.");
+            return;
+        }
+
+        var od = new List<long>();
+        PartyRoster? last = null;
+        var decoder = new LiveCombatDecoder(_ => { }, onParty: r => last = r, onOdBonus: od.Add);
+        await new PcapFileSource().ReadRawAsync(path, decoder.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        output.WriteLine($"OD-ZUSATZ: {string.Join(" → ", od)}");
+        foreach (var m in last?.Members ?? [])
+        {
+            output.WriteLine($"MITGLIED {m.Name[0]}…({m.Name.Length}): Stufe {m.Level}, GS {m.GearScore}, KS {m.CombatPower}");
+        }
+    }
+
     /// <summary>Ping passiv aus der Aufnahme (TCP-Sequenz/ACK der Spielverbindung): Verlauf in 10-s-Schritten.</summary>
     [Fact]
     public async Task MeasuresPingPassively()

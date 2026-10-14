@@ -1,6 +1,8 @@
 # Patchnotes
 
-## Unveröffentlicht
+## 0.0.6 – 14.10.2026
+- Neu: Gruppen-Lobby – bist du in einer Gruppe und läuft kein Kampf, zeigt AionMeta alle Mitglieder mit Stufe, GS und KS. Beitritt und Austritt siehst du sofort.
+- Neu: Zusatz-Od-Energie (der blaue Wert, z. B. +95) unten in der Fußzeile, mit eigenem Kristall-Symbol.
 - Neues Programm-Symbol: AionMeta hat jetzt ein eigenes Logo – in der Taskleiste, im Infobereich und an allen Fenstern.
 - AionMeta ist jetzt in der Windows-Taskleiste sichtbar.
 - Fenster ohne Windows-Titelleiste: Einstellungen, Details, Kämpfe, Statistik, „Was ist neu“ und die Update-Abfrage haben eine eigene schlanke Kopfzeile im Stil des Overlays (Esc schließt).

@@ -434,6 +434,12 @@ public sealed class LiveCombatMeter
         get { lock (_lock) return _party?.IsRemembered == true; }
     }
 
+    /// <summary>Mitglieder der Gruppenliste dieser Sitzung (Lobby-Anzeige); leer ohne Gruppe oder bei nur gemerkter Gruppe.</summary>
+    public IReadOnlyList<Analysis.RosterMember> LobbyMembers()
+    {
+        lock (_lock) return _party?.Members ?? [];
+    }
+
     /// <summary>Gruppengröße laut letzter Gruppenliste oder null (keine Gruppe gesehen).</summary>
     public int? PartySize
     {

@@ -23,7 +23,7 @@ public sealed class LiveCombatDecoder
     public const int MaxPendingFrames = 500;
 
     private static readonly IReadOnlySet<ushort> Types =
-        new HashSet<ushort>(PlayerInfoHypothesis.Types) { DamageRecordHypothesis.Type, DotRecordHypothesis.Type, SummonOwnerHypothesis.Type, EnemyHpHypothesis.RemainingType, PartyRosterHypothesis.Type, FieldBossListHypothesis.Type, BattleStateHypothesis.Type, PartyHpHypothesis.Type };
+        new HashSet<ushort>(PlayerInfoHypothesis.Types) { DamageRecordHypothesis.Type, DotRecordHypothesis.Type, SummonOwnerHypothesis.Type, EnemyHpHypothesis.RemainingType, PartyRosterHypothesis.Type, FieldBossListHypothesis.Type, BattleStateHypothesis.Type, PartyHpHypothesis.Type, OdEnergyHypothesis.ListType, OdEnergyHypothesis.UpdateType };
 
     private readonly Action<CombatHit> _onHit;
     private readonly Action<PlayerInfoCandidate>? _onPlayer;
@@ -34,6 +34,7 @@ public sealed class LiveCombatDecoder
     private readonly Action<long>? _onOwnCombatPower;
     private readonly Action<BattleState>? _onBattleState;
     private readonly Action<uint, DateTimeOffset>? _onDeath;
+    private readonly Action<long>? _onOdBonus;
     private readonly TcpStreamReassembler _reassembler = new(TimeSpan.FromSeconds(2));
     private readonly Dictionary<TcpStreamKey, StreamHypothesisCheck> _checks = new();
     private readonly Dictionary<StreamHypothesisCheck, List<ObservedFrame>> _pending = new();
@@ -56,8 +57,10 @@ public sealed class LiveCombatDecoder
         Action<FieldBossList>? onFieldBosses = null,
         Action<long>? onOwnCombatPower = null,
         Action<BattleState>? onBattleState = null,
-        Action<uint, DateTimeOffset>? onDeath = null)
+        Action<uint, DateTimeOffset>? onDeath = null,
+        Action<long>? onOdBonus = null)
     {
+        _onOdBonus = onOdBonus;
         ArgumentNullException.ThrowIfNull(onHit);
         _onHit = onHit;
         _onPlayer = onPlayer;
@@ -152,6 +155,12 @@ public sealed class LiveCombatDecoder
         if (frame.Type == BattleStateHypothesis.Type)
         {
             if (_onBattleState is not null && BattleStateHypothesis.Parse(frame.Body, frame.Time) is { } state) _onBattleState(state);
+            return;
+        }
+
+        if (frame.Type is OdEnergyHypothesis.ListType or OdEnergyHypothesis.UpdateType)
+        {
+            if (_onOdBonus is not null && OdEnergyHypothesis.ParseBonus(frame.Type, frame.Body) is { } bonus) _onOdBonus(bonus);
             return;
         }
 

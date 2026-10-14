@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace Aion2DpsMeter.Core.Analysis;
 
@@ -45,6 +45,12 @@ public sealed class PartyRoster
         return _body.AsSpan().IndexOf(needle) >= 0;
     }
 
+    /// <summary>
+    /// Mitglieder in Listenreihenfolge (Name, Stufe, Ausrüstungswert, Kampfkraft) – für die Lobby-Anzeige. Bei einer nur
+    /// gemerkten Gruppe leer (keine Werte bekannt).
+    /// </summary>
+    public IReadOnlyList<RosterMember> Members => _names is null ? PartyRosterHypothesis.Members(_body) : [];
+
     /// <summary>Kampfkraft und Ausrüstungswert eines Mitglieds (über den Namen) oder null.</summary>
     public PlayerPower? PowerOf(string name) => _names is null ? CombatPowerHypothesis.FromRoster(_body, name) : null;
 }
@@ -54,9 +60,51 @@ public sealed class PartyRoster
 /// geschrieben, kein Code übernommen. Kopf: Gruppen-Schlüssel u32, Gruppenname (u8 Länge + UTF-8), Größe u8.
 /// Belegt an der Aufnahme 20261013-172129 (README, v17): Größe 5, alle 5 Spieler mit Namen standen in der Liste.
 /// </summary>
+/// <summary>Ein Gruppenmitglied aus der Liste.</summary>
+public sealed record RosterMember(string Name, int Level, int GearScore, long CombatPower);
+
 public static class PartyRosterHypothesis
 {
     public const ushort Type = 0x0297;
+
+    /// <summary>
+    /// Mitglieder suchen: je Eintrag Maske u8, Platz u8 (1–12, aufsteigend), Kennung (8 B), Name (u8 + UTF-8), danach
+    /// Klasse u32, Stufe u32 (1–99), Ausrüstungswert u32. Belegt an der Lobby-Aufnahme 20261014-214503 (Stufen 45/30/24/24/23
+    /// wie im Spiel). Kampfkraft über <see cref="CombatPowerHypothesis.FromRoster"/>.
+    /// </summary>
+    public static IReadOnlyList<RosterMember> Members(ReadOnlySpan<byte> body)
+    {
+        var members = new List<RosterMember>();
+        var nextSlot = 1;
+        for (var i = 0; i + 11 < body.Length && members.Count < 12; i++)
+        {
+            if (body[i + 1] != nextSlot) continue;
+            int length = body[i + 10];
+            var nameAt = i + 11;
+            if (length is < 2 or > 36 || nameAt + length + 12 > body.Length) continue;
+            string name;
+            try
+            {
+                name = new UTF8Encoding(false, true).GetString(body.Slice(nameAt, length));
+            }
+            catch (DecoderFallbackException)
+            {
+                continue;
+            }
+
+            if (!name.All(char.IsLetterOrDigit)) continue;
+            var o = nameAt + length;
+            var level = BitConverter.ToInt32(body.Slice(o + 4, 4));
+            var gear = BitConverter.ToInt32(body.Slice(o + 8, 4));
+            if (level is < 1 or > 99) continue;
+            var power = CombatPowerHypothesis.FromRoster(body, name);
+            members.Add(new RosterMember(name, level, power?.GearScore ?? (gear is >= 1 and <= 50_000 ? gear : 0), power?.CombatPower ?? 0));
+            nextSlot++;
+            i = o;
+        }
+
+        return members;
+    }
 
     /// <summary>Liste oder null, wenn der Kopf nicht passt.</summary>
     public static PartyRoster? Parse(ReadOnlySpan<byte> body)

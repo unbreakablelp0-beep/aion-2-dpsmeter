@@ -132,6 +132,15 @@ public sealed class OverlayWindow : Window
     private readonly Rectangle[] _pingBars = [new(), new(), new()];
     private readonly TextBlock _pingText = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
     private Func<TimeSpan?>? _pingValue;
+
+    // Zusatz-Od-Energie (blauer Wert, sicher aus dem Spiel): eigenes Kristall-Symbol + „+95“, links neben dem Ping.
+    private readonly StackPanel _od = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), ToolTip = "Zusatz-Od-Energie (aus dem Spiel gelesen)" };
+    private readonly TextBlock _odText = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 0, 0, 0), Foreground = Frozen(Color.FromRgb(0x5C, 0xC8, 0xFF)), FontWeight = FontWeights.SemiBold };
+    private Func<long?>? _odValue;
+
+    // Gruppen-Lobby: Mitglieder der Gruppenliste, solange kein Kampf läuft.
+    private readonly StackPanel _lobby = new() { Margin = new Thickness(0, 2, 0, 4), Visibility = Visibility.Collapsed };
+    private string? _lobbyKey;
     private readonly Dictionary<uint, RowView> _rows = new();
     private OverlaySettings _settings;
     private bool _compact;
@@ -165,9 +174,11 @@ public sealed class OverlayWindow : Window
         Func<int?, NpcInfo?> npcInfo,
         Func<string?>? update = null,
         Action? applyUpdate = null,
-        Func<TimeSpan?>? ping = null)
+        Func<TimeSpan?>? ping = null,
+        Func<long?>? odBonus = null)
     {
         _pingValue = ping;
+        _odValue = odBonus;
         _npcInfo = npcInfo;
         _update = update;
         _applyUpdate = applyUpdate;
@@ -265,6 +276,7 @@ public sealed class OverlayWindow : Window
         _elapsed.FontFamily = NumberFont;
         _endCard.Child = _endText;
 
+        _body.Children.Add(_lobby);
         _body.Children.Add(_emptyText);
         _body.Children.Add(_rowsHost);
         _body.Children.Add(_moreText);
@@ -295,6 +307,10 @@ public sealed class OverlayWindow : Window
         _ping.Children.Add(_pingText);
         DockPanel.SetDock(_ping, Dock.Right);
         _footer.Children.Add(_ping);
+        _od.Children.Add(OdIcon(10));
+        _od.Children.Add(_odText);
+        DockPanel.SetDock(_od, Dock.Right);
+        _footer.Children.Add(_od);
         _footer.Children.Add(_ownInfo);
 
         var root = new DockPanel { Margin = new Thickness(10, 8, 10, 6) };
@@ -509,6 +525,7 @@ public sealed class OverlayWindow : Window
         }
 
         UpdateRows(content);
+        UpdateLobby(content, snapshot);
         _moreText.FontSize = SecondaryFontSize;
         _moreText.ToolTip = null;
         // Im Modus „Nur ich“ nichts über andere Spieler zeigen; bei „Alle“ nur die über das Zeilenlimit hinaus.
@@ -734,6 +751,100 @@ public sealed class OverlayWindow : Window
     private static readonly Brush[] PingBrushes = [Frozen(Color.FromRgb(0x4C, 0xD9, 0x64)), Frozen(Color.FromRgb(0xF2, 0xC1, 0x4E)), Frozen(Color.FromRgb(0xE8, 0x4C, 0x4C))];
     private static readonly Brush PingOff = Frozen(Color.FromArgb(0x50, 0xFF, 0xFF, 0xFF));
 
+    /// <summary>Zusatz-Od-Energie „+95“; ausgeblendet, solange das Spiel den Wert noch nicht geschickt hat.</summary>
+    private void UpdateOd()
+    {
+        if (!_settings.ShowOd || _odValue?.Invoke() is not { } bonus)
+        {
+            _od.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        _od.Visibility = Visibility.Visible;
+        _odText.Text = $"+{bonus.ToString("#,0", System.Globalization.CultureInfo.GetCultureInfo("de-DE"))}";
+        _odText.FontSize = Math.Max(9, FontSize - 2);
+    }
+
+    /// <summary>Selbst gezeichnetes Od-Symbol: blauer Kristall mit hellem Kern.</summary>
+    private static FrameworkElement OdIcon(double size)
+    {
+        var canvas = new Canvas { Width = 24, Height = 24 };
+        canvas.Children.Add(new Path
+        {
+            Data = Geometry.Parse("M12,1 L19,9 L12,23 L5,9 Z"),
+            Fill = new LinearGradientBrush(Color.FromRgb(0x9A, 0xE4, 0xFF), Color.FromRgb(0x2E, 0x7C, 0xE6), 90),
+            Stroke = Frozen(Color.FromRgb(0xD8, 0xF4, 0xFF)),
+            StrokeThickness = 1.2,
+        });
+        canvas.Children.Add(new Path { Data = Geometry.Parse("M12,4 L16,9 L12,17 L8,9 Z"), Fill = Frozen(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF)) });
+        return new Viewbox { Width = size, Height = size + 2, Child = canvas, VerticalAlignment = VerticalAlignment.Center };
+    }
+
+    private DateTimeOffset _lobbyChangedAt;
+
+    /// <summary>
+    /// Gruppen-Lobby: Mitglieder mit Klasse (falls bekannt), Stufe, GS und KS. Nur ohne laufenden Kampf – und wenn schon
+    /// Kampfzeilen da sind, nur in der ersten Minute nach einer Änderung der Gruppe (Beitritt/Austritt).
+    /// </summary>
+    private void UpdateLobby(OverlayContent content, LiveCombatSnapshot snapshot)
+    {
+        var members = _settings.ShowLobby && !_collapsed ? _meter.LobbyMembers() : [];
+        var key = string.Join("|", members.Select(m => $"{m.Name}:{m.Level}:{m.GearScore}:{m.CombatPower}"));
+        var now = DateTimeOffset.UtcNow;
+        if (key != _lobbyKey)
+        {
+            _lobbyKey = key;
+            _lobbyChangedAt = now;
+            _lobby.Children.Clear();
+            if (members.Count >= 2) BuildLobby(members, snapshot);
+        }
+
+        var show = members.Count >= 2 && !content.Active && (content.Rows.Count == 0 || now - _lobbyChangedAt < TimeSpan.FromMinutes(1));
+        _lobby.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void BuildLobby(IReadOnlyList<Aion2DpsMeter.Core.Analysis.RosterMember> members, LiveCombatSnapshot snapshot)
+    {
+        var german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
+        var size = _meter.PartySize is { } s && s >= members.Count ? s : members.Count;
+        _lobby.Children.Add(new TextBlock
+        {
+            Text = $"Gruppe · {members.Count}/{size}",
+            FontWeight = FontWeights.SemiBold,
+            Foreground = AccentBrush,
+            FontSize = SecondaryFontSize,
+            Margin = new Thickness(2, 0, 0, 3),
+        });
+
+        foreach (var m in members)
+        {
+            var className = snapshot.Actors.FirstOrDefault(a => a.Name == m.Name)?.ClassName;
+            var row = new DockPanel { Margin = new Thickness(0, 1, 0, 1), Height = RowHeight * 0.85 };
+            var card = new Border { CornerRadius = new CornerRadius(4), Background = Frozen(Color.FromArgb(0x30, 0, 0, 0)), Padding = new Thickness(4, 0, 6, 0), Child = row };
+            var icon = ClassIcons.Create(className ?? string.Empty, RowHeight * 0.62);
+            DockPanel.SetDock(icon, Dock.Left);
+            row.Children.Add(icon);
+            var numbers = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            numbers.Children.Add(Number($"St. {m.Level}", 40));
+            numbers.Children.Add(Number(m.GearScore > 0 ? $"{m.GearScore.ToString("#,0", german)} GS" : "– GS", 62));
+            numbers.Children.Add(Number(m.CombatPower > 0 ? $"{OverlayFormat.Compact(m.CombatPower)} KS" : "– KS", 62));
+            DockPanel.SetDock(numbers, Dock.Right);
+            row.Children.Add(numbers);
+            row.Children.Add(new TextBlock { Text = m.Name, FontWeight = FontWeights.SemiBold, Foreground = NameBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis });
+            _lobby.Children.Add(card);
+        }
+
+        TextBlock Number(string text, double width) => new()
+        {
+            Text = text,
+            Foreground = DimBrush,
+            FontSize = SecondaryFontSize,
+            TextAlignment = TextAlignment.Right,
+            MinWidth = width * FontSize / 13,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+    }
+
     /// <summary>Ping-Anzeige: Balken und Zahl in Grün (gut), Gelb (mittel) oder Rot (schlecht); ohne Messung ausgeblendet.</summary>
     private void UpdatePing()
     {
@@ -753,6 +864,7 @@ public sealed class OverlayWindow : Window
     private void UpdateFooter(LiveCombatSnapshot snapshot)
     {
         UpdatePing();
+        UpdateOd();
         _lockIcon.Text = _settings.ClickThrough ? "🔒" : "🔓";
         _lockIcon.ToolTip = _settings.ClickThrough
             ? "Klicks gehen ans Spiel – ausschalten mit Strg+Umschalt+K oder Doppelklick aufs Tray-Symbol"
