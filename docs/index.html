@@ -67,6 +67,8 @@
   .btn.primary { background: linear-gradient(180deg, #ad86ff, #7a4be8); color: #fff; box-shadow: 0 10px 34px rgba(155,108,255,.45), inset 0 1px 0 rgba(255,255,255,.3); }
   .btn.ghost { border-color: var(--line); color: var(--text); background: rgba(255,255,255,.04); }
   .meta { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 22px; color: var(--dim); font-size: 14px; }
+  .downloads { margin-top: 18px; display: inline-flex; align-items: baseline; gap: 8px; color: var(--dim); font-size: 15px; background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; }
+  .downloads b { font: 700 24px var(--num); color: var(--text); }
   .meta span::before { content: "✓ "; color: var(--teal); font-weight: 700; }
 
   /* Bühne mit „Spiel“-Hintergrund und dem Overlay */
@@ -221,6 +223,7 @@
         <a class="btn ghost" href="#installation">So funktioniert's</a>
       </div>
       <div class="meta"><span>Windows 11</span><span>Eine Datei, keine Installation</span><span>Updates per Klick</span></div>
+      <div class="downloads" id="downloads" hidden><b id="dl-count">0</b> Downloads</div>
     </div>
 
     <div class="stage">
@@ -435,6 +438,26 @@
     } catch (e) {
       box.innerHTML = `<div class="note-card">Patchnotes findest du auf <a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/blob/main/CHANGELOG.md">GitHub</a>.</div>`;
     }
+  })();
+
+  // ---- Download-Zähler: alle EXE-Downloads über alle Releases (GitHub zählt jeden Download) ----
+  (async () => {
+    try {
+      const r = await fetch("https://api.github.com/repos/unbreakablelp0-beep/aion-2-dpsmeter/releases?per_page=100");
+      if (!r.ok) return;
+      const total = (await r.json()).reduce((sum, rel) =>
+        sum + (rel.assets || []).filter(a => /\.exe$/i.test(a.name)).reduce((s, a) => s + (a.download_count || 0), 0), 0);
+      const el = document.getElementById("dl-count");
+      const box = document.getElementById("downloads");
+      box.hidden = false;
+      const start = performance.now();
+      const step = (now) => {
+        const p = Math.min(1, (now - start) / 900);
+        el.textContent = Math.round(total * (1 - Math.pow(1 - p, 3))).toLocaleString("de-DE");
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    } catch (e) { /* offline: Zähler bleibt verborgen */ }
   })();
 
   // ---- neueste Version und direkter EXE-Link von GitHub ----
