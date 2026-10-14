@@ -5,6 +5,7 @@
     <Project Path="src/Aion2DpsMeter.Core/Aion2DpsMeter.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Aion2DpsMeter.App.Tests/Aion2DpsMeter.App.Tests.csproj" />
     <Project Path="tests/Aion2DpsMeter.Capture.Npcap.Tests/Aion2DpsMeter.Capture.Npcap.Tests.csproj" />
     <Project Path="tests/Aion2DpsMeter.Core.Tests/Aion2DpsMeter.Core.Tests.csproj" />
   </Folder>

@@ -64,7 +64,7 @@ public class NpcapCaptureBackendTests(ITestOutputHelper output)
         }
 
         var ex = await Assert.ThrowsAsync<CaptureException>(() =>
-            backend.CaptureAsync(@"\Device\NPF_{00000000-GIBT-ES-NICHT}", _ => { }, CancellationToken.None));
+            backend.CaptureAsync(@"\Device\NPF_{00000000-GIBT-ES-NICHT}", CaptureOptions.Default, _ => { }, CancellationToken.None));
 
         Assert.Equal(CaptureErrorKind.AdapterNotFound, ex.Kind);
     }

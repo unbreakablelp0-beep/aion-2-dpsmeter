@@ -1,159 +1,109 @@
-# AION 2 DPS Meter
+# AION 2 DPS Meter (inoffiziell)
 
-Ein eigenständiges DPS-Meter für AION 2 Global / EU (C#, .NET 10, WPF, Windows 11 x64).
+Ein Overlay-DPS-Meter für **AION 2 Global / EU** – C#, .NET 10, WPF, Windows 11 x64.
 
-**Stand: Phase 3 (Aufzeichnungen laden) – Code fertig, Laufzeit noch ungeprüft.**
+> **Inoffiziell.** Dieses Projekt steht in keiner Verbindung zu NCSOFT. AION ist eine Marke von NCSOFT.
+> NCSOFT untersagt in seinen Nutzungsbedingungen nicht autorisierte Programme. Die Nutzung erfolgt **auf eigene Gefahr**.
 
-- Aufzeichnungen: `.pcap`/`.pcapng` laden und Pakete zählen (`RecordingLoader`,
-  `PcapFileSource`). Tests mit selbst erzeugten synthetischen Dateien sind geschrieben,
-  konnten wegen Smart App Control aber noch nicht ausgeführt werden.
+## Was es macht
 
-- Schadensberechnung (Gesamtschaden, DPS, Kampfzeit, Treffer, kritische Treffer):
-  Grundstruktur fertig, mit synthetischen Testdaten getestet.
-- Netzwerkdiagnose: Npcap-Prüfung, Adapterliste, passive Aufnahme mit Paketzähler,
-  Statuswechsel und verständliche Fehlermeldungen – als testbare Klassen, noch
-  **nicht** in der Oberfläche.
-- Es gibt **keine** Protokollanalyse und **keinen** Decoder. Aus Netzwerkpaketen
-  werden keine AION-2-Werte gelesen; die Berechnung bekommt noch keine echten Spieldaten.
-- Das Fenster soll den Status „Netzwerkaufnahme noch nicht eingerichtet“ zeigen;
-  sein Start ist derzeit durch Smart App Control blockiert (siehe unten).
+- **Rein passiv:** liest mit [Npcap](https://npcap.com/) die Netzwerkpakete mit, die ohnehin an den eigenen PC gehen.
+  - Kein Zugriff auf den Spielspeicher und keine Injektion.
+  - Keine Automatisierung und keine Eingaben ins Spiel.
+  - Nichts wird an das Spiel oder den Server gesendet.
+- **Overlay:** DPS, Schaden und Anteil je Spieler. Die Spieleransicht wählt sich automatisch: allein siehst du nur dich,
+  in einer Gruppe dich und deine Gruppe.
+  - Klassenfarben und Kampfkraft (eigene und Gruppe).
+  - Tode im Kampf mit Totenkopf.
+  - Kontraststufen für gute Lesbarkeit.
+  - Automatisches Ausblenden ohne Kampf.
+- **Bosse:**
+  - HP-Leiste nur bei Dungeon- und Weltbossen.
+  - Kill-Zeit-Schätzung.
+  - Berserk-Countdown, wenn das Spiel ein Zeitlimit meldet.
+- **Mehr:**
+  - Spieler-Detailfenster mit Fähigkeiten und DPS-Kurve.
+  - Kampfverlauf und Wochenstatistik.
+  - Event-Alarme und Weltboss-Zeiten.
+  - Tray-Symbol und Tastenkürzel.
+- Alle Daten bleiben **lokal** unter `Dokumente\Aion2DpsMeter` (Kämpfe, Einstellungen, Aufnahmen).
 
-## Voraussetzungen
+Viele Paketfelder sind **Hypothesen**, die an eigenen Aufnahmen geprüft wurden. Details stehen im
+[Entwicklungsprotokoll](docs/Entwicklungsprotokoll.md).
 
-- Windows 11 x64
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Npcap](https://npcap.com/) für die passive Netzwerkaufnahme (getestet mit Npcap 1.89)
+## Was nicht enthalten ist
+
+- **Keine Spielgrafiken** (Klassen- oder Kampfkraft-Symbole von NCSOFT). Das Overlay zeichnet eigene Vektorsymbole.
+  - `publish-persoenlich.ps1` baut eine private Variante mit **eigenen**, lokal abgelegten Bildern aus
+    `Dokumente\Aion2DpsMeter\Icons`.
+  - Diese Bilder sind nicht im Repository. Die damit gebaute EXE ist nicht zum Weitergeben gedacht.
+- **Keine Aufnahmen** (`.pcap`), keine Kampfdaten und keine Spielernamen.
+- **Keine Community-Namenslisten** (Fähigkeiten, Gegner).
+  - Liegen solche Listen lokal unter `Dokumente\Aion2DpsMeter`, nutzt das Programm sie (`skills-community.json`,
+    `npcs-community.json`).
+  - Ohne sie zeigt es Nummern statt Namen.
+
+## Bauen
+
+Voraussetzungen: Windows 11 x64, [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) und
+[Npcap](https://npcap.com/) für die Aufnahme.
+
+```bash
+dotnet build Aion2DpsMeter.slnx -c Release
+```
+
+```bash
+dotnet test Aion2DpsMeter.slnx -c Release --filter "Category!=RequiresNpcap"
+```
+
+Eigenständige EXE (eine Datei):
+
+```bash
+dotnet publish src/Aion2DpsMeter.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts/endnutzer-win-x64
+```
+
+Tests mit `Category=RequiresNpcap` brauchen ein installiertes Npcap. Tests mit `LocalRecording` laufen nur, wenn
+`AION2DPS_HYPOTHESIS_PCAP` auf eine eigene Aufnahme zeigt.
 
 ## Projektstruktur
 
-```
-Aion2DpsMeter.slnx                          Projektmappe (Solution)
-src/Aion2DpsMeter.App/                      WPF-Oberfläche (Fenster, später Overlay)
-src/Aion2DpsMeter.Core/                     Logik ohne Oberfläche, ohne Fremdpakete
-    Capture/                                Netzwerkdiagnose: Status, Fehlerarten, Paketzähler,
-                                            NetworkDiagnostics, Schnittstelle IPacketCaptureBackend
-    Protocol/                               Protokollanalyse (noch leer)
-    Combat/                                 Schadensberechnung (Spieler, Treffer, Statistik)
-src/Aion2DpsMeter.Capture.Npcap/            Npcap-Anbindung über SharpPcap 6.3.1
-tests/Aion2DpsMeter.Core.Tests/             Unit-Tests für Core (mit simulierten Paketen)
-tests/Aion2DpsMeter.Capture.Npcap.Tests/    Integrationstests gegen das installierte Npcap
-```
-
-Abhängigkeiten (nur in diese Richtung):
-
-```
-App ──────────────► Core ◄────────── Capture.Npcap ──► SharpPcap ──► Npcap (wpcap.dll)
-Core.Tests ───────► Core
-Capture.Npcap.Tests ──► Capture.Npcap
-```
-
-Core kennt weder die Oberfläche noch Npcap. Die Diagnoselogik (`NetworkDiagnostics`)
-spricht nur mit der Schnittstelle `IPacketCaptureBackend`; in den Unit-Tests steckt
-dahinter eine simulierte Anbindung, im Programm später `NpcapCaptureBackend`.
-Die App ist noch nicht mit der Npcap-Anbindung verbunden.
-
-### Passive Aufnahme
-
-`NpcapCaptureBackend` öffnet Adapter nur zum Lesen (kein Promiscuous-Modus), sendet
-und verändert keine Pakete und gibt von jedem Paket nur Zeitpunkt und Länge weiter.
-Paketinhalte werden nicht gespeichert.
-
-## Bauen, testen, starten
-
-Alle Befehle im Ordner `Aion2DpsMeter` (dort, wo diese README liegt) ausführen:
-
-```
-dotnet build
-dotnet test
-dotnet run --project src/Aion2DpsMeter.App
-```
-
-Nur die Unit-Tests (ohne Npcap): `dotnet test tests/Aion2DpsMeter.Core.Tests`
-Npcap-Befund anzeigen: `dotnet test tests/Aion2DpsMeter.Capture.Npcap.Tests --logger "console;verbosity=detailed"`
-
-## Automatische Tests auf GitHub (CI)
-
-Weil Smart App Control auf dem Entwicklungs-PC Tests zufällig blockiert, wird jeder
-Stand zusätzlich auf GitHub gebaut und getestet: `.github/workflows/ci.yml`
-(Windows-Runner, .NET 10, `dotnet build -c Release`, `dotnet test -c Release`).
-Die Testergebnisse (.trx) werden als Artefakt „testergebnisse“ gespeichert.
-
-| Tests | Läuft in CI? |
+| Ordner | Inhalt |
 |---|---|
-| `Aion2DpsMeter.Core.Tests` (Schadensberechnung, Netzwerkdiagnose mit simulierten Paketen, RecordingLoader) | **ja** |
-| `NpcapCaptureBackendTests` (Npcap-Version, Adapterliste) – Kategorie `RequiresNpcap` | **nein** – braucht installiertes Npcap |
-| `PcapFileSourceTests` (pcap/pcapng lesen) – Kategorie `RequiresNpcap` | **nein** – das Lesen läuft über Npcaps wpcap.dll |
-| `LiveCaptureTests` (10-s-Aufnahme) – Kategorien `LiveCapture`, `RequiresNpcap` | **nein** – braucht Npcap und echten Adapter |
+| `src/Aion2DpsMeter.Core` | Paketrahmen, Hypothesen-Decoder, Kampfberechnung, Overlay-Texte, Einstellungen, Events |
+| `src/Aion2DpsMeter.Capture.Npcap` | Passive Aufnahme über Npcap, `.pcap`-Dateien lesen |
+| `src/Aion2DpsMeter.App` | WPF-Oberfläche: Overlay, Einstellungen, Detail- und Statistikfenster |
+| `tests/` | xUnit-Tests (Core, App, Npcap) |
+| `docs/` | Entwicklungsprotokoll und Diagnosen |
 
-Npcap wird auf dem Runner bewusst nicht installiert (Npcap-Lizenz). Die mit
-`RequiresNpcap` markierten Tests können nur lokal laufen.
+## Quellen und Dank
 
-## Bekannter Laufzeitblocker: Smart App Control
+Ein Teil des Protokollverständnisses folgt der öffentlichen Beschreibung im Projekt
+[cyberbadger6969/aion2-dps-meter](https://github.com/cyberbadger6969/aion2-dps-meter) (GPL-3.0).
+Es wurde nur gelesen, **kein Code übernommen**; jede betroffene Klasse nennt die Quelle im Kommentar.
 
-Auf dem Entwicklungs-PC ist die Windows-Funktion **Smart App Control** eingeschaltet
-und bleibt bewusst eingeschaltet. Sie blockiert selbst gebaute, nicht signierte
-Dateien, die Microsoft unbekannt sind. Typische Meldung:
+## Lizenz
 
-```
-System.IO.FileLoadException: Could not load file or assembly '...\Aion2DpsMeter.<Name>.dll'.
-Eine Anwendungssteuerungsrichtlinie hat diese Datei blockiert. (0x800711C7)
-```
+[MIT](LICENSE)
 
-- `dotnet build` ist davon **nicht** betroffen.
-- `dotnet test` und der App-Start können betroffen sein – je nachdem, welche Datei
-  nach dem Build blockiert wird. Das entscheidet Windows pro Datei-Hash und kann sich
-  nach jedem Build ändern.
-- Nachweis im Ereignisprotokoll: *Microsoft → Windows → CodeIntegrity → Operational*,
-  Ereignis-IDs **3077**, **3033** und **3118** (Regel `VerifiedAndReputableDesktop`).
-- Es werden keine Sicherheitseinstellungen geändert und keine Umgehungen eingebaut.
+---
 
-Details: [docs/Diagnose-Phase1-Blockierung.md](docs/Diagnose-Phase1-Blockierung.md)
+## English (short)
 
-### Geprüfte Stände
+An **unofficial**, overlay DPS meter for **AION 2 Global / EU**, written in C# with .NET 10 and WPF for Windows 11 x64.
 
-**Phase 2 (12.10.2026, ca. 00:20):** Build fehlerfrei; Core.Tests 45/45 und
-Capture.Npcap.Tests 3/3 bestanden, keine Sperre. Npcap 1.89 erkannt, 9 Adapter gelistet.
-
-**Phase 3 (12.10.2026, 00:27) – aktueller Stand:**
-
-| Schritt | Ergebnis |
-|---|---|
-| `dotnet build` | erfolgreich, 0 Warnungen, 0 Fehler |
-| `Aion2DpsMeter.Core.Tests` | **nicht ausgeführt** – `Aion2DpsMeter.Core.Tests.dll` von Smart App Control blockiert („Catastrophic failure“, 0 Tests gelaufen) |
-| `Aion2DpsMeter.Capture.Npcap.Tests` | **10 von 10 fehlgeschlagen** – alle wegen Sperre von `Aion2DpsMeter.Core.dll` bzw. `Aion2DpsMeter.Capture.Npcap.dll`, nicht wegen Testlogik |
-| Neue Phase-3-Funktionen (pcap/pcapng laden) | kompiliert, aber **zur Laufzeit noch nicht geprüft** |
-| Live-Testaufnahme (10 s) | **nicht ausgeführt** (siehe unten) |
-| App-Start | **nicht ausgeführt** (bewusst). Das Fenster wurde noch nie erfolgreich geöffnet. |
-
-### Optionale Live-Testaufnahme
-
-`LiveCaptureTests` nimmt 10 Sekunden rein passiv auf und zählt nur Pakete/Bytes.
-Sie läuft nur, wenn die Umgebungsvariable gesetzt ist (PowerShell):
-
-```
-$env:AION2DPS_LIVE_CAPTURE_ADAPTER = "I225-V"
-dotnet test tests/Aion2DpsMeter.Capture.Npcap.Tests --filter "Category=LiveCapture" --logger "console;verbosity=detailed"
-Remove-Item Env:AION2DPS_LIVE_CAPTURE_ADAPTER
-```
-
-## Wichtige Hinweise
-
-### Risiko: Kontosperre
-
-Die Betriebsrichtlinien von AION 2 verbieten die Nutzung „nicht autorisierter
-Programme“. DPS-Meter, die mit Npcap den Netzwerkverkehr mitlesen, können
-darunter fallen – auch wenn sie rein passiv arbeiten. **Eine Kontosperre ist
-möglich.** Die Nutzung geschieht auf eigenes Risiko. Lies die aktuellen
-Nutzungsbedingungen des Spiels, bevor du das Programm mit dem Spiel verwendest.
-
-Dieses Projekt arbeitet ausschließlich passiv: Es liest oder verändert keinen
-Spielspeicher, injiziert keinen Code, sendet oder verändert keine Spielpakete
-und automatisiert keine Spielfunktionen. Daten werden nur lokal gespeichert
-und nicht automatisch übertragen.
-
-### Overlay ≠ echter Schaden
-
-Ein funktionierendes Fenster oder Overlay bedeutet **nicht**, dass echter
-AION-2-Schaden gelesen wird. Das sind zwei getrennte Ziele: Werte werden erst
-angezeigt, wenn die zugehörigen Nachrichten anhand selbst erfasster Daten
-nachweislich verstanden sind. Unsichere oder fehlende Daten werden gekennzeichnet.
+- **Passive only:** it reads the game's network packets with Npcap.
+  - No memory reading and no injection.
+  - No automation, and nothing is sent to the game.
+- **Features:**
+  - Overlay with DPS, damage and share per player, plus class colours and combat power.
+  - Deaths per fight.
+  - Boss HP bar, kill-time estimate and berserk countdown.
+  - Player detail window with a DPS chart.
+  - Fight history, weekly stats, event alarms and contrast levels.
+- **Not included:** no NCSOFT artwork, no packet recordings, no player names and no community name lists.
+- **Disclaimer:** not affiliated with NCSOFT. Third-party tools may violate the game's terms of service, so use it at
+  your own risk.
+- **Build:** `dotnet build Aion2DpsMeter.slnx -c Release` (needs the .NET 10 SDK, plus Npcap to capture).
+- **Credits:** parts of the protocol understanding follow the public description in cyberbadger6969/aion2-dps-meter
+  (GPL-3.0). It was read only and no code was copied.
+- **Licence:** MIT.

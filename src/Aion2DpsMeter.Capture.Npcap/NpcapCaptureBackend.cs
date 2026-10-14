@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using Aion2DpsMeter.Core.Analysis;
 using Aion2DpsMeter.Core.Capture;
 using Microsoft.Win32;
 using SharpPcap;
@@ -7,9 +8,10 @@ using SharpPcap.LibPcap;
 namespace Aion2DpsMeter.Capture.Npcap;
 
 /// <summary>
-/// Anbindung an Npcap Ã¼ber SharpPcap. Rein passiv: Adapter werden nur zum Lesen
-/// geÃ¶ffnet (kein Promiscuous-Modus), es werden keine Pakete gesendet oder verÃ¤ndert,
-/// und vom Paket werden nur Zeit und LÃ¤nge weitergegeben.
+/// Anbindung an Npcap über SharpPcap. Rein passiv: Adapter werden nur zum Lesen
+/// geöffnet (kein Promiscuous-Modus), es werden keine Pakete gesendet oder verändert.
+/// Weitergegeben werden Zeit und Länge; der Paketinhalt nur, wenn <see cref="CaptureOptions.OnRawPacket"/>
+/// gesetzt ist (Live-Auswertung im Speicher) oder gespeichert werden soll.
 /// </summary>
 public sealed class NpcapCaptureBackend : IPacketCaptureBackend
 {
@@ -41,7 +43,7 @@ public sealed class NpcapCaptureBackend : IPacketCaptureBackend
         if (IsRestrictedToAdministrators() && !IsAdministrator())
         {
             return new CaptureBackendInfo(false, version, CaptureErrorKind.AccessDenied,
-                "Npcap ist mit â€žNur Administratorenâ€œ installiert, das Programm lÃ¤uft ohne Administratorrechte.");
+                "Npcap ist mit „Nur Administratoren“ installiert, das Programm läuft ohne Administratorrechte.");
         }
 
         return new CaptureBackendInfo(true, version);
@@ -65,19 +67,20 @@ public sealed class NpcapCaptureBackend : IPacketCaptureBackend
     }
 
     /// <inheritdoc />
-    public Task CaptureAsync(string adapterId, Action<CapturedPacket> onPacket, CancellationToken cancellationToken)
+    public Task CaptureAsync(string adapterId, CaptureOptions options, Action<CapturedPacket> onPacket, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(adapterId);
+        ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(onPacket);
 
         return Task.Factory.StartNew(
-            () => CaptureLoop(adapterId, onPacket, cancellationToken),
+            () => CaptureLoop(adapterId, options, onPacket, cancellationToken),
             cancellationToken,
             TaskCreationOptions.LongRunning,
             TaskScheduler.Default);
     }
 
-    private static void CaptureLoop(string adapterId, Action<CapturedPacket> onPacket, CancellationToken cancellationToken)
+    private static void CaptureLoop(string adapterId, CaptureOptions options, Action<CapturedPacket> onPacket, CancellationToken cancellationToken)
     {
         LibPcapLiveDevice device;
         try
@@ -107,24 +110,81 @@ public sealed class NpcapCaptureBackend : IPacketCaptureBackend
             throw new CaptureException(ClassifyPcapError(ex.Message, CaptureErrorKind.AdapterOpenFailed), ex.Message, ex);
         }
 
+        CaptureFileWriterDevice? writer = null;
         try
         {
-            while (!cancellationToken.IsCancellationRequested)
+            if (options.Filter is { } filter)
             {
-                var result = device.GetNextPacket(out PacketCapture packet);
-                switch (result)
+                try
                 {
-                    case GetPacketStatus.PacketRead:
-                        onPacket(new CapturedPacket(
-                            new DateTimeOffset(packet.Header.Timeval.Date, TimeSpan.Zero),
-                            packet.Data.Length));
-                        break;
-                    case GetPacketStatus.ReadTimeout:
-                        break;
-                    case GetPacketStatus.NoRemainingPackets:
-                        return;
-                    default:
-                        throw new CaptureException(CaptureErrorKind.CaptureFailed, device.LastError);
+                    device.Filter = filter;
+                }
+                catch (PcapException ex)
+                {
+                    throw new CaptureException(CaptureErrorKind.InvalidFilter, $"{filter}: {ex.Message}", ex);
+                }
+            }
+
+            if (options.SaveFilePath is { } savePath)
+            {
+                writer = OpenWriter(savePath, device);
+            }
+
+            var selector = options.Process is { } process
+                ? new ProcessPacketSelector<RawCapture>(process.ProcessId, process.Connections)
+                : null;
+            var linkType = (int)device.LinkType;
+            var onRaw = options.OnRawPacket;
+
+            void Emit(RawCapture raw)
+            {
+                writer?.Write(raw);
+                var time = new DateTimeOffset(raw.Timeval.Date, TimeSpan.Zero);
+                onPacket(new CapturedPacket(time, raw.Data.Length));
+                onRaw?.Invoke(new RawPacket(time, linkType, raw.Data, raw.PacketLength));
+            }
+
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    var result = device.GetNextPacket(out PacketCapture packet);
+                    switch (result)
+                    {
+                        case GetPacketStatus.PacketRead:
+                            var raw = packet.GetPacket();
+                            if (selector is null)
+                            {
+                                Emit(raw);
+                            }
+                            else
+                            {
+                                var rawPacket = new RawPacket(
+                                    new DateTimeOffset(raw.Timeval.Date, TimeSpan.Zero), linkType, raw.Data, raw.PacketLength);
+                                foreach (var selected in selector.Add(rawPacket, raw)) Emit(selected);
+                            }
+
+                            break;
+                        case GetPacketStatus.ReadTimeout:
+                            if (selector is not null)
+                            {
+                                foreach (var selected in selector.Poll()) Emit(selected);
+                            }
+
+                            break;
+                        case GetPacketStatus.NoRemainingPackets:
+                            return;
+                        default:
+                            throw new CaptureException(CaptureErrorKind.CaptureFailed, device.LastError);
+                    }
+                }
+            }
+            finally
+            {
+                // Zurückgehaltene Pakete am Ende noch entscheiden und speichern.
+                if (selector is not null)
+                {
+                    foreach (var selected in selector.Flush()) Emit(selected);
                 }
             }
 
@@ -132,7 +192,36 @@ public sealed class NpcapCaptureBackend : IPacketCaptureBackend
         }
         finally
         {
+            writer?.Close();
             device.Close();
+        }
+    }
+
+    /// <summary>
+    /// Öffnet eine .pcap-Datei zum Schreiben. Schreibt nur auf die lokale Festplatte – es wird
+    /// nichts ins Netzwerk gesendet.
+    /// </summary>
+    private static CaptureFileWriterDevice OpenWriter(string path, LibPcapLiveDevice device)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+            if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+
+            // libpcap überschreibt vorhandene Dateien ohne Rückfrage (FileMode wird nicht beachtet),
+            // deshalb selbst prüfen.
+            if (File.Exists(path))
+            {
+                throw new CaptureException(CaptureErrorKind.SaveFileFailed, $"{path}: Datei existiert bereits.");
+            }
+
+            var writer = new CaptureFileWriterDevice(path);
+            writer.Open(device);
+            return writer;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or PcapException or ArgumentException)
+        {
+            throw new CaptureException(CaptureErrorKind.SaveFileFailed, $"{path}: {ex.Message}", ex);
         }
     }
 

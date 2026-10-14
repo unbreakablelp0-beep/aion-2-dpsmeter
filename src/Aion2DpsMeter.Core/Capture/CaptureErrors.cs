@@ -35,6 +35,12 @@ public enum CaptureErrorKind
     /// <summary>Die Datei ist keine lesbare pcap-/pcapng-Aufzeichnung.</summary>
     InvalidFileFormat,
 
+    /// <summary>Der Paketfilter ist ungültig.</summary>
+    InvalidFilter,
+
+    /// <summary>Die Aufnahmedatei konnte nicht angelegt oder geschrieben werden.</summary>
+    SaveFileFailed,
+
     /// <summary>Unbekannter Fehler.</summary>
     Unknown,
 }
@@ -67,6 +73,10 @@ public static class CaptureErrorMessages
             "Die Aufzeichnungsdatei wurde nicht gefunden.",
         CaptureErrorKind.InvalidFileFormat =>
             "Die Datei ist keine lesbare Paketaufzeichnung (.pcap oder .pcapng) oder sie ist beschädigt.",
+        CaptureErrorKind.InvalidFilter =>
+            "Der Paketfilter ist ungültig. Bitte die Verbindungen neu ermitteln.",
+        CaptureErrorKind.SaveFileFailed =>
+            "Die Aufnahmedatei konnte nicht gespeichert werden (Speicherort prüfen).",
         _ =>
             "Unbekannter Fehler bei der Netzwerkaufnahme.",
     };

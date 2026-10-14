@@ -23,7 +23,11 @@ internal static class TestRecordings
     private const uint SnapLength = 65535;
 
     /// <summary>Klassisches pcap-Format (Little Endian, Mikrosekunden).</summary>
-    public static byte[] CreatePcap()
+    public static byte[] CreatePcap() =>
+        CreatePcap(Packets.Select(p => (p.Offset, Payload(p.Length))));
+
+    /// <summary>Klassisches pcap-Format mit eigenen Ethernet-Frames.</summary>
+    public static byte[] CreatePcap(IEnumerable<(TimeSpan Offset, byte[] Frame)> frames)
     {
         using var ms = new MemoryStream();
         WriteUInt32(ms, 0xA1B2C3D4); // Magic
@@ -34,17 +38,38 @@ internal static class TestRecordings
         WriteUInt32(ms, SnapLength);
         WriteUInt32(ms, LinkTypeEthernet);
 
-        foreach (var (offset, length) in Packets)
+        foreach (var (offset, frame) in frames)
         {
             var micros = ToUnixMicroseconds(T0 + offset);
             WriteUInt32(ms, (uint)(micros / 1_000_000));
             WriteUInt32(ms, (uint)(micros % 1_000_000));
-            WriteUInt32(ms, (uint)length);
-            WriteUInt32(ms, (uint)length);
-            ms.Write(Payload(length));
+            WriteUInt32(ms, (uint)frame.Length);
+            WriteUInt32(ms, (uint)frame.Length);
+            ms.Write(frame);
         }
 
         return ms.ToArray();
+    }
+
+    /// <summary>
+    /// Ethernet/IPv4/UDP-Frame nach Standard, Adressen aus Dokumentationsbereichen.
+    /// </summary>
+    public static byte[] UdpFrame(byte[] source, int sourcePort, byte[] destination, int destinationPort, int payloadLength)
+    {
+        var frame = new byte[14 + 20 + 8 + payloadLength];
+        BinaryPrimitives.WriteUInt16BigEndian(frame.AsSpan(12), 0x0800);
+        var ip = frame.AsSpan(14);
+        ip[0] = 0x45;
+        BinaryPrimitives.WriteUInt16BigEndian(ip[2..], (ushort)(20 + 8 + payloadLength));
+        ip[8] = 64;
+        ip[9] = 17;
+        source.CopyTo(ip[12..]);
+        destination.CopyTo(ip[16..]);
+        var udp = ip[20..];
+        BinaryPrimitives.WriteUInt16BigEndian(udp, (ushort)sourcePort);
+        BinaryPrimitives.WriteUInt16BigEndian(udp[2..], (ushort)destinationPort);
+        BinaryPrimitives.WriteUInt16BigEndian(udp[4..], (ushort)(8 + payloadLength));
+        return frame;
     }
 
     /// <summary>pcapng-Format: Section Header, Interface Description, Enhanced Packet Blocks.</summary>

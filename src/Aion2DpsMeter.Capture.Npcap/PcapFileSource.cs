@@ -1,3 +1,4 @@
+using Aion2DpsMeter.Core.Analysis;
 using Aion2DpsMeter.Core.Capture;
 using SharpPcap;
 using SharpPcap.LibPcap;
@@ -8,7 +9,7 @@ namespace Aion2DpsMeter.Capture.Npcap;
 /// Liest .pcap- und .pcapng-Dateien über SharpPcap/Npcap (libpcap). Nur lesend;
 /// vom Paket werden nur Zeit und Länge weitergegeben.
 /// </summary>
-public sealed class PcapFileSource : IPacketFileSource
+public sealed class PcapFileSource : IPacketFileSource, IRawPacketFileSource
 {
     /// <inheritdoc />
     public Task ReadAsync(string path, Action<CapturedPacket> onPacket, CancellationToken cancellationToken)
@@ -16,10 +17,26 @@ public sealed class PcapFileSource : IPacketFileSource
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(onPacket);
 
-        return Task.Run(() => Read(path, onPacket, cancellationToken), cancellationToken);
+        return Task.Run(
+            () => Read(path, (time, _, data, _) => onPacket(new CapturedPacket(time, data.Length)), cancellationToken),
+            cancellationToken);
     }
 
-    private static void Read(string path, Action<CapturedPacket> onPacket, CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public Task ReadRawAsync(string path, Action<RawPacket> onPacket, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentNullException.ThrowIfNull(onPacket);
+
+        return Task.Run(
+            () => Read(path, (time, linkType, data, originalLength) =>
+                onPacket(new RawPacket(time, linkType, data.ToArray(), originalLength)), cancellationToken),
+            cancellationToken);
+    }
+
+    private delegate void PacketHandler(DateTimeOffset time, int linkType, ReadOnlySpan<byte> data, int originalLength);
+
+    private static void Read(string path, PacketHandler onPacket, CancellationToken cancellationToken)
     {
         if (!File.Exists(path))
         {
@@ -50,9 +67,12 @@ public sealed class PcapFileSource : IPacketFileSource
                 switch (result)
                 {
                     case GetPacketStatus.PacketRead:
-                        onPacket(new CapturedPacket(
+                        var raw = packet.GetPacket();
+                        onPacket(
                             new DateTimeOffset(packet.Header.Timeval.Date, TimeSpan.Zero),
-                            packet.Data.Length));
+                            (int)device.LinkType,
+                            packet.Data,
+                            raw.PacketLength);
                         break;
                     case GetPacketStatus.NoRemainingPackets:
                         return;

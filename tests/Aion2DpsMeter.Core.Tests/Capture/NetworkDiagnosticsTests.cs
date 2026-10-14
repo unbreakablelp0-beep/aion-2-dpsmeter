@@ -177,6 +177,38 @@ public class NetworkDiagnosticsTests
     }
 
     [Fact]
+    public async Task Start_PassesOptionsToBackend_DefaultWhenNone()
+    {
+        var (diagnostics, backend) = Create();
+        diagnostics.Initialize();
+
+        diagnostics.Start(FakeCaptureBackend.Ethernet.Id);
+        await diagnostics.StopAsync().WaitAsync(TestTimeout);
+        Assert.Equal(CaptureOptions.Default, backend.LastOptions);
+
+        var options = new CaptureOptions("(tcp port 50001)", @"C:\Aufnahmen\a.pcap");
+        diagnostics.Start(FakeCaptureBackend.Ethernet.Id, options);
+        await diagnostics.StopAsync().WaitAsync(TestTimeout);
+        Assert.Equal(options, backend.LastOptions);
+    }
+
+    [Theory]
+    [InlineData(CaptureErrorKind.InvalidFilter)]
+    [InlineData(CaptureErrorKind.SaveFileFailed)]
+    public async Task Capture_FilterOrSaveError_IsFaulted(CaptureErrorKind kind)
+    {
+        var (diagnostics, backend) = Create();
+        backend.CaptureBehavior = (_, _, _) => Task.FromException(new CaptureException(kind, "Detail"));
+        diagnostics.Initialize();
+
+        diagnostics.Start(FakeCaptureBackend.Ethernet.Id, new CaptureOptions("kaputt", "x.pcap"));
+        await diagnostics.Completion.WaitAsync(TestTimeout);
+
+        Assert.Equal(CaptureState.Faulted, diagnostics.Status.State);
+        Assert.Equal(kind, diagnostics.Status.Error);
+    }
+
+    [Fact]
     public async Task StatusChanged_ReportsReadyCapturingStoppedInOrder()
     {
         var (diagnostics, _) = Create();

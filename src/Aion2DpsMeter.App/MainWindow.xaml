@@ -1,11 +1,131 @@
 <Window x:Class="Aion2DpsMeter.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="AION 2 DPS Meter" Height="300" Width="500"
-        WindowStartupLocation="CenterScreen">
-    <StackPanel Margin="24" VerticalAlignment="Center">
-        <TextBlock Text="AION 2 DPS Meter" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,16" />
-        <TextBlock Text="Status:" FontWeight="SemiBold" />
-        <TextBlock x:Name="StatusText" FontSize="16" Margin="0,4,0,0" TextWrapping="Wrap" />
-    </StackPanel>
+        Title="AION 2 DPS Meter" Height="620" Width="620" MinWidth="480" MinHeight="420"
+        WindowStartupLocation="CenterScreen" Background="#F4F5F7"
+        Loaded="OnLoaded" Closing="OnClosing">
+    <Window.Resources>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#DDE1E6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,12" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+            <TextBlock Text="AION 2 DPS Meter" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="Live-Schaden für dich und deine Gruppe – rein passiv, ohne Eingriff ins Spiel" Foreground="Gray" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Bottom" TextWrapping="Wrap" FontSize="11" Foreground="Gray" Margin="0,6,0,0">
+            Werte nach Community-Hypothese (abgeglichen, nicht offiziell). Overlay nur im Fenstermodus oder randlosen Vollbild sichtbar.
+            Eigener Charakter wird beim Einloggen oder nach einmal Teleportieren erkannt.
+        </TextBlock>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Ein-Klick-Start -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="QuickStartButton" Content="▶  Starten" FontSize="15" FontWeight="SemiBold"
+                                    Padding="20,8" Click="OnQuickStart"
+                                    ToolTip="Wählt Netzwerkkarte und AION 2 automatisch, startet die Live-Auswertung und blendet das Overlay ein." />
+                            <Button x:Name="StopButton" Content="■  Stoppen" FontSize="15" Padding="20,8" Click="OnStop" />
+                        </StackPanel>
+                        <TextBlock x:Name="StatusText" FontSize="14" TextWrapping="Wrap" Margin="0,10,0,0" />
+                        <TextBlock x:Name="DetailText" FontSize="11" Foreground="Gray" TextWrapping="Wrap" Margin="0,2,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Anzeige -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Anzeige" Style="{StaticResource SectionTitle}" />
+                        <WrapPanel>
+                            <Button x:Name="OverlayButton" Content="Overlay ein" Click="OnToggleOverlay"
+                                    ToolTip="Normales Fenster über dem Spiel (kein Eingriff ins Spiel)." />
+                            <Button x:Name="LiveButton" Content="Tabelle…" Click="OnShowLive"
+                                    ToolTip="Ausführliche Tabelle mit allen Spielern, Treffern, kritischen Treffern und Pets." />
+                            <Button Content="Zurücksetzen" Click="OnResetLive" />
+                        </WrapPanel>
+                        <WrapPanel Margin="0,10,0,0">
+                            <CheckBox x:Name="ClickThroughCheck" Content="Klicks durchlassen" VerticalAlignment="Center"
+                                      Click="OnOverlaySettingChanged"
+                                      ToolTip="An: Mausklicks gehen ans Spiel. Zum Verschieben des Overlays wieder ausschalten." />
+                            <TextBlock Text="Schrift" VerticalAlignment="Center" Margin="16,0,6,0" />
+                            <Button Content="–" Width="26" Padding="0,2" Margin="0,0,2,0" Click="OnFontSmaller" />
+                            <Button Content="+" Width="26" Padding="0,2" Click="OnFontLarger" />
+                            <TextBlock Text="Deckkraft" VerticalAlignment="Center" Margin="12,0,6,0" />
+                            <Slider x:Name="OpacitySlider" Width="100" Minimum="0.1" Maximum="1" VerticalAlignment="Center"
+                                    ValueChanged="OnOpacityChanged" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Erweitert -->
+                <Expander Header="Erweitert" Margin="0,0,0,10">
+                    <Border Style="{StaticResource Card}" Margin="0,8,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Netzwerkkarte" FontWeight="SemiBold" />
+                            <DockPanel Margin="0,4,0,8">
+                                <Button x:Name="ReloadButton" DockPanel.Dock="Right" Content="Neu laden" Margin="6,0,0,0" Click="OnReload" />
+                                <ComboBox x:Name="AdapterBox" />
+                            </DockPanel>
+
+                            <TextBlock Text="Programm" FontWeight="SemiBold" />
+                            <DockPanel Margin="0,4,0,4">
+                                <Button x:Name="ProcessReloadButton" DockPanel.Dock="Right" Content="Programme laden"
+                                        Margin="6,0,0,0" Click="OnLoadProcesses" />
+                                <ComboBox x:Name="ProcessBox" />
+                            </DockPanel>
+                            <CheckBox x:Name="ProcessFilterCheck" Content="Nur Verbindungen dieses Programms aufnehmen" Margin="0,2" />
+                            <CheckBox x:Name="LiveCheck" IsChecked="True" Content="Schaden live auswerten (nur im Speicher)" Margin="0,2" />
+                            <CheckBox x:Name="SaveCheck" Content="Aufnahme als .pcap-Datei speichern (für Fehlersuche)" Margin="0,2" />
+                            <TextBlock x:Name="SaveFolderText" FontSize="11" Foreground="Gray" Margin="20,0,0,8" TextWrapping="Wrap" />
+
+                            <WrapPanel Margin="0,0,0,10">
+                                <Button x:Name="StartButton" Content="Mit diesen Einstellungen starten" Click="OnStart" />
+                                <Button x:Name="AnalyzeButton" Content="Aufnahme auswerten…" Click="OnAnalyze" />
+                                <Button x:Name="CandidatesButton" Content="04-38-Kandidaten…" Click="OnCandidates"
+                                        ToolTip="Treffer einer gespeicherten Aufnahme als CSV zum Abgleich mit dem Spiel." />
+                            </WrapPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Pakete:" Margin="0,0,16,2" Foreground="Gray" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="PacketsText" />
+                                <TextBlock Grid.Row="1" Text="Datenmenge:" Margin="0,0,16,2" Foreground="Gray" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="BytesText" />
+                                <TextBlock Grid.Row="2" Text="Zeitraum:" Margin="0,0,16,2" Foreground="Gray" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="DurationText" />
+                                <TextBlock Grid.Row="3" Text="Rate:" Margin="0,0,16,2" Foreground="Gray" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="RateText" />
+                                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" x:Name="VersionText" FontSize="11" Foreground="Gray" Margin="0,4,0,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
 </Window>

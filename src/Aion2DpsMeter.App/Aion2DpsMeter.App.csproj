@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aion2DpsMeter.Core\Aion2DpsMeter.Core.csproj" />
+    <ProjectReference Include="..\Aion2DpsMeter.Capture.Npcap\Aion2DpsMeter.Capture.Npcap.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -10,6 +11,35 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- Nur für das Tray-Symbol (NotifyIcon). -->
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Keine globalen WinForms-/Drawing-Namen (sonst mehrdeutig mit WPF); TrayIcon.cs bindet sie selbst ein. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <!--
+    Variante „persoenlich“ (nur mit -p:EmbedPersonalIcons=true, siehe publish-persoenlich.ps1): bettet die Klassenbilder
+    aus dem lokalen Icon-Ordner beim Bauen ein. Die Bilder werden NICHT ins Projekt kopiert. Die Standard-EXE enthält
+    keine fremden Grafiken.
+  -->
+  <PropertyGroup Condition="'$(EmbedPersonalIcons)' == 'true'">
+    <PersonalIconDir Condition="'$(PersonalIconDir)' == ''">$([System.Environment]::GetFolderPath(SpecialFolder.MyDocuments))\Aion2DpsMeter\Icons</PersonalIconDir>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(EmbedPersonalIcons)' == 'true'">
+    <PersonalIcon Include="gladiator;templer;assassine;bogenschuetze;magier;beschwoerer;kleriker;kantor" />
+    <EmbeddedResource Include="@(PersonalIcon->'$(PersonalIconDir)\%(Identity).png')" LogicalName="PersonalIcons/%(Filename)%(Extension)" />
+    <!-- Kampfkraft-Symbol: optional (fehlt es, zeigt das Programm ein neutrales Zeichen). -->
+    <EmbeddedResource Include="$(PersonalIconDir)\kampfkraft.png" LogicalName="PersonalIcons/kampfkraft.png" Condition="Exists('$(PersonalIconDir)\kampfkraft.png')" />
+  </ItemGroup>
+
+  <Target Name="CheckPersonalIcons" BeforeTargets="BeforeBuild" Condition="'$(EmbedPersonalIcons)' == 'true'">
+    <Error Condition="!Exists('$(PersonalIconDir)\%(PersonalIcon.Identity).png')"
+           Text="Variante persoenlich: Klassenbild fehlt: $(PersonalIconDir)\%(PersonalIcon.Identity).png – bitte alle 8 PNG-Dateien in den Icon-Ordner legen." />
+  </Target>
 
 </Project>

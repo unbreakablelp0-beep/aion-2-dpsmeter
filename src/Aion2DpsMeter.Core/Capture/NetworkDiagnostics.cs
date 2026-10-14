@@ -98,7 +98,7 @@ public sealed class NetworkDiagnostics
     /// <see cref="CaptureErrorKind.AdapterNotFound"/>.
     /// </summary>
     /// <exception cref="InvalidOperationException">Wenn nicht bereit oder bereits eine Aufnahme läuft.</exception>
-    public CaptureStatus Start(string adapterId)
+    public CaptureStatus Start(string adapterId, CaptureOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(adapterId);
 
@@ -124,7 +124,8 @@ public sealed class NetworkDiagnostics
                 status = _status = CaptureStatus.Capturing(adapter);
 
                 // Erst nach dem Capturing-Ereignis starten, damit die Reihenfolge der Statusmeldungen stimmt.
-                run = new Task<Task>(() => RunAsync(adapterId, cancellation));
+                var effectiveOptions = options ?? CaptureOptions.Default;
+                run = new Task<Task>(() => RunAsync(adapterId, effectiveOptions, cancellation));
                 _completion = run.Unwrap();
             }
         }
@@ -151,12 +152,12 @@ public sealed class NetworkDiagnostics
         await Completion.ConfigureAwait(false);
     }
 
-    private async Task RunAsync(string adapterId, CancellationTokenSource cancellation)
+    private async Task RunAsync(string adapterId, CaptureOptions options, CancellationTokenSource cancellation)
     {
         CaptureStatus final;
         try
         {
-            await _backend.CaptureAsync(adapterId, _counter.Add, cancellation.Token).ConfigureAwait(false);
+            await _backend.CaptureAsync(adapterId, options, _counter.Add, cancellation.Token).ConfigureAwait(false);
             final = cancellation.IsCancellationRequested
                 ? CaptureStatus.Stopped
                 : CaptureStatus.Faulted(CaptureErrorKind.CaptureAborted);

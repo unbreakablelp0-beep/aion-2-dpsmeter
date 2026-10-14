@@ -36,9 +36,12 @@ internal sealed class FakeCaptureBackend : IPacketCaptureBackend
         return AdapterList.ToList();
     }
 
-    public Task CaptureAsync(string adapterId, Action<CapturedPacket> onPacket, CancellationToken cancellationToken)
+    public CaptureOptions? LastOptions { get; private set; }
+
+    public Task CaptureAsync(string adapterId, CaptureOptions options, Action<CapturedPacket> onPacket, CancellationToken cancellationToken)
     {
         CaptureCalls++;
+        LastOptions = options;
         return CaptureBehavior(adapterId, onPacket, cancellationToken);
     }
 }

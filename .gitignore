@@ -4,6 +4,7 @@ obj/
 [Dd]ebug/
 [Rr]elease/
 TestResults/
+artifacts/
 *.trx
 
 # Visual Studio / Rider / VS Code
@@ -18,3 +19,25 @@ TestResults/
 *.pcap
 *.pcapng
 *.cap
+
+# Lokale Daten aus Dokumente\Aion2DpsMeter – gehören nie ins Repository:
+# Kämpfe, Aufnahmen, Community-Listen, Einstellungen, Gruppen- und Charakterdaten.
+Kaempfe/
+Aufnahmen/
+Icons/
+skills*.json
+npcs*.json
+weltbosse.json
+gruppe.json
+overlay.json
+ereignisse*.json
+events*.json
+charakter*.json
+fertigkeiten*.json
+
+# Spielgrafiken (NCSoft) – nur lokal für die persönliche Variante, nie hochladen.
+*.png
+*.jpg
+*.jpeg
+*.ico
+NICHT-WEITERGEBEN.txt

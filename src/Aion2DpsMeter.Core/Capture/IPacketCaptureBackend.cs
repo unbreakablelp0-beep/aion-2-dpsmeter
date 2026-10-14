@@ -46,7 +46,35 @@ public interface IPacketCaptureBackend
     /// Nimmt auf dem Adapter auf und ruft <paramref name="onPacket"/> für jedes Paket auf,
     /// bis <paramref name="cancellationToken"/> ausgelöst wird.
     /// </summary>
-    /// <exception cref="CaptureException">Bei Fehlern (Adapter fehlt, kann nicht geöffnet werden, Lesefehler).</exception>
+    /// <exception cref="CaptureException">
+    /// Bei Fehlern (Adapter fehlt, kann nicht geöffnet werden, ungültiger Filter, Datei nicht schreibbar, Lesefehler).
+    /// </exception>
     /// <exception cref="OperationCanceledException">Darf beim Abbruch geworfen werden.</exception>
-    Task CaptureAsync(string adapterId, Action<CapturedPacket> onPacket, CancellationToken cancellationToken);
+    Task CaptureAsync(string adapterId, CaptureOptions options, Action<CapturedPacket> onPacket, CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Optionen einer Aufnahme.
+/// </summary>
+/// <param name="Filter">
+/// Paketfilter in libpcap/BPF-Syntax (z. B. „tcp port 1234“), der schon im Treiber angewendet wird;
+/// null = alle Pakete.
+/// </param>
+/// <param name="SaveFilePath">Pfad einer .pcap-Datei, in die die gefilterten Pakete lokal gespeichert werden; null = nicht speichern.</param>
+/// <param name="Process">
+/// Nur Pakete dieses Programms melden und speichern; die Verbindungen werden laufend nachgelesen
+/// (<see cref="ProcessPacketSelector{T}"/>). Pakete erscheinen dadurch etwa 2 s verzögert. null = keine Programmauswahl.
+/// </param>
+/// <param name="OnRawPacket">
+/// Bekommt jedes (ausgewählte) Paket mit Inhalt, z. B. für die Live-Auswertung. Der Inhalt bleibt im Speicher und
+/// wird dadurch nicht gespeichert. Wird auf dem Aufnahme-Thread aufgerufen; null = nur Zeit und Länge melden.
+/// </param>
+public sealed record CaptureOptions(
+    string? Filter = null,
+    string? SaveFilePath = null,
+    ProcessSelection? Process = null,
+    Action<Analysis.RawPacket>? OnRawPacket = null)
+{
+    /// <summary>Keine Filterung, nichts speichern.</summary>
+    public static CaptureOptions Default { get; } = new();
 }

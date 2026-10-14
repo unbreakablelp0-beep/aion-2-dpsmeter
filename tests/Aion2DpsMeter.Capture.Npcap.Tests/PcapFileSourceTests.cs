@@ -57,6 +57,31 @@ public class PcapFileSourceTests : IDisposable
     }
 
     [Fact]
+    public async Task Analyze_PcapWithUdpFrames_GivesConversationPerDirection()
+    {
+        byte[] local = [192, 0, 2, 10], server = [198, 51, 100, 7];
+        var path = Temp(TestRecordings.CreatePcap(
+        [
+            (TimeSpan.Zero, TestRecordings.UdpFrame(local, 50000, server, 7777, 10)),
+            (TimeSpan.FromSeconds(1), TestRecordings.UdpFrame(server, 7777, local, 50000, 200)),
+            (TimeSpan.FromSeconds(2), TestRecordings.UdpFrame(local, 50000, server, 7777, 30)),
+        ]), ".pcap");
+
+        var analysis = await Aion2DpsMeter.Core.Analysis.RecordingReport.AnalyzeAsync(new PcapFileSource(), path, ["192.0.2.10"]);
+
+        Assert.Equal(3, analysis.TotalPackets);
+        Assert.Equal(0, analysis.UnparsedPackets);
+        var c = Assert.Single(analysis.Conversations);
+        Assert.Equal("192.0.2.10:50000", c.A.ToString());
+        Assert.Equal("198.51.100.7:7777", c.B.ToString());
+        Assert.Equal(2, c.AToB.Packets);
+        Assert.Equal(40, c.AToB.PayloadBytes);
+        Assert.Equal(1, c.BToA.Packets);
+        Assert.Equal(200, c.BToA.PayloadBytes);
+        Assert.Equal(TimeSpan.FromSeconds(2), c.Duration);
+    }
+
+    [Fact]
     public async Task Load_MissingFile_IsFileNotFound()
     {
         var path = Path.Combine(Path.GetTempPath(), $"aion2dps-gibt-es-nicht-{Guid.NewGuid():N}.pcap");
