@@ -1,6 +1,7 @@
 # Patchnotes
 
 ## Unveröffentlicht
+- Eigene Klassenbilder bekommen eine dunkle runde Unterlage mit Rand in Klassenfarbe – auch helle Bilder bleiben gut erkennbar.
 - Knöpfe im Overlay: sanfte Hover-Animation (Hintergrund in der Themenfarbe, Symbol wird hell und etwas größer).
 
 ## 0.0.5 – 14.10.2026

@@ -266,7 +266,17 @@ public static class ClassIcons
         var key = isPet ? "Pet" : className;
         if ((CustomImage(key) ?? EmbeddedImage(key)) is { } custom)
         {
-            return new Image { Source = custom, Width = size, Height = size, VerticalAlignment = VerticalAlignment.Center, Stretch = Stretch.Uniform };
+            // Dunkle runde Unterlage mit Rand in Klassenfarbe: auch helle Bilder bleiben auf hellem Balken gut erkennbar.
+            var holder = new Grid { Width = size, Height = size, VerticalAlignment = VerticalAlignment.Center };
+            var tint = isPet ? Neutral : ColorOf(className);
+            holder.Children.Add(new Ellipse
+            {
+                Fill = Frozen(Color.FromArgb(0xD8, 0x14, 0x12, 0x18)),
+                Stroke = Frozen(Color.FromArgb(0xC0, tint.R, tint.G, tint.B)),
+                StrokeThickness = Math.Max(1, size / 14),
+            });
+            holder.Children.Add(new Image { Source = custom, Margin = new Thickness(size * 0.06), Stretch = Stretch.Uniform });
+            return holder;
         }
 
         var grid = new Grid { Width = size, Height = size, VerticalAlignment = VerticalAlignment.Center };
