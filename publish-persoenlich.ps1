@@ -49,4 +49,11 @@ foreach ($line in Get-Content (Join-Path $PSScriptRoot 'CHANGELOG.md') -Encoding
     if ($inside -and $line.StartsWith('- ')) { $section += $line }
 }
 [IO.File]::WriteAllText((Join-Path $Output 'PATCHNOTES.txt'), (($section -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
+
+# Prüfsumme der EXE (für das Update per Klick, falls diese EXE als Release hochgeladen wird).
+$exe = Get-ChildItem $Output -Filter *.exe | Select-Object -First 1
+if ($exe) {
+    $hash = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    [IO.File]::WriteAllText((Join-Path $Output 'SHA256SUMS'), "$hash  $($exe.Name)`n", [Text.UTF8Encoding]::new($false))
+}
 Write-Host "Fertig: $Output"
