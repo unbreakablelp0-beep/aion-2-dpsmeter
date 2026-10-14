@@ -1,4 +1,4 @@
-# AION 2 DPS Meter (inoffiziell)
+﻿# AION 2 DPS Meter (inoffiziell)
 
 Ein Overlay-DPS-Meter für **AION 2 Global / EU** – C#, .NET 10, WPF, Windows 11 x64.
 
@@ -27,6 +27,9 @@ Ein Overlay-DPS-Meter für **AION 2 Global / EU** – C#, .NET 10, WPF, Windows 
   - Event-Alarme und Weltboss-Zeiten.
   - Tray-Symbol und Tastenkürzel.
 - Alle Daten bleiben **lokal** unter `Dokumente\Aion2DpsMeter` (Kämpfe, Einstellungen, Aufnahmen).
+- **Updates:** Der Meter fragt GitHub nach neuen Releases (abschaltbar, es werden keine Daten gesendet). Ein Klick auf den
+  Hinweis im Overlay lädt die neue Version, prüft die SHA-256 und startet neu. Die EXE ist nicht signiert, deshalb kann
+  Windows beim ersten Start warnen.
 
 Viele Paketfelder sind **Hypothesen**, die an eigenen Aufnahmen geprüft wurden. Details stehen im
 [Entwicklungsprotokoll](docs/Entwicklungsprotokoll.md).

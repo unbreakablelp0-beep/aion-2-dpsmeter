@@ -84,13 +84,27 @@ public sealed class OverlayWindow : Window
     private readonly TextBlock _bossTopHit = new() { HorizontalAlignment = HorizontalAlignment.Right, FontWeight = FontWeights.Bold, Foreground = Frozen(Color.FromRgb(0xF2, 0xC2, 0x6A)) };
     private readonly TextBlock _bossTopHitLabel = new() { Text = "TOP-TREFFER", HorizontalAlignment = HorizontalAlignment.Right, Foreground = DimBrush };
     private readonly TextBlock _bannerText = new() { Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
+
+    // Update-Hinweis (neue Version auf GitHub): anklickbar, startet nach Rückfrage das Update.
+    private readonly TextBlock _updateText = new()
+    {
+        Margin = new Thickness(0, 3, 0, 0),
+        TextTrimming = TextTrimming.CharacterEllipsis,
+        Foreground = Brushes.Gold,
+        FontWeight = FontWeights.SemiBold,
+        Cursor = Cursors.Hand,
+        Visibility = Visibility.Collapsed,
+        ToolTip = "Neue Version auf GitHub – klicken, um sie (nach Rückfrage) zu installieren",
+    };
+    private Func<string?>? _update;
+    private Action? _applyUpdate;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(100) };
     private readonly Border _panel = new() { CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1) };
 
     /// <summary>Kräftige, schmale Zahlenschrift (Windows-Systemschrift Bahnschrift, Rückfall Segoe UI).</summary>
     private static readonly FontFamily NumberFont = new("Bahnschrift SemiBold Condensed, Bahnschrift, Segoe UI");
     private readonly Ellipse _dot = new() { Width = 8, Height = 8, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _title = new() { FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _title = new() { FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, ToolTip = $"AION 2 DPS Meter {Aion2DpsMeter.Core.Updates.AppRelease.Current}" };
     private readonly TextBlock _elapsed = new() { Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _modeButton;
     private readonly Grid _rowsHost = new() { ClipToBounds = true, VerticalAlignment = VerticalAlignment.Top };
@@ -137,9 +151,13 @@ public sealed class OverlayWindow : Window
         Func<string?> banner,
         Func<BossStatus?> boss,
         Func<DateTimeOffset?, double?> bestOwnDps,
-        Func<int?, NpcInfo?> npcInfo)
+        Func<int?, NpcInfo?> npcInfo,
+        Func<string?>? update = null,
+        Action? applyUpdate = null)
     {
         _npcInfo = npcInfo;
+        _update = update;
+        _applyUpdate = applyUpdate;
         _banner = banner;
         _boss = boss;
         _bestOwnDps = bestOwnDps;
@@ -253,6 +271,9 @@ public sealed class OverlayWindow : Window
         root.Children.Add(header);
         DockPanel.SetDock(_bannerText, Dock.Top);
         root.Children.Add(_bannerText);
+        DockPanel.SetDock(_updateText, Dock.Top);
+        root.Children.Add(_updateText);
+        WireClick(_updateText, () => _applyUpdate?.Invoke());
 
         // Boss-Leiste: dünner roter Balken mit Name links und Werten rechts.
         // Volle Breite: dunkelrote Bahn = verlorene HP, hellrote Füllung = Rest-HP; Text liegt darauf.
@@ -425,6 +446,10 @@ public sealed class OverlayWindow : Window
         _bannerText.Visibility = banner is null || _collapsed ? Visibility.Collapsed : Visibility.Visible;
         _bannerText.Foreground = banner is not null && (banner.StartsWith('⏰') || banner.StartsWith("🔒", StringComparison.Ordinal)) ? Brushes.Gold : DimBrush;
         _bannerText.FontSize = SecondaryFontSize;
+        var update = _update?.Invoke();
+        _updateText.Text = update ?? string.Empty;
+        _updateText.FontSize = SecondaryFontSize;
+        _updateText.Visibility = update is null || _collapsed ? Visibility.Collapsed : Visibility.Visible;
 
         UpdateBossBar();
 

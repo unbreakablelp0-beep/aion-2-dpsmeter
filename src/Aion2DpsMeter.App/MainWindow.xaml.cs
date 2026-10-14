@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -10,6 +11,7 @@ using Aion2DpsMeter.Core.Analysis;
 using Aion2DpsMeter.Core.Capture;
 using Aion2DpsMeter.Core.Combat;
 using Aion2DpsMeter.Core.Events;
+using Aion2DpsMeter.Core.Updates;
 
 namespace Aion2DpsMeter.App;
 
@@ -99,6 +101,12 @@ public partial class MainWindow : Window
     private static string RecordingDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Aion2DpsMeter", "Aufnahmen");
 
+    private readonly UpdateService _updates = new();
+    private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromSeconds(10) }; // erst kurz nach dem Start, dann alle 6 h
+    private UpdateInfo? _update;
+    private string? _updateProgress;
+    private bool _updating;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -118,6 +126,16 @@ public partial class MainWindow : Window
         _worldBosses = _worldBossStore.Load();
         _alarmTimer.Tick += (_, _) => CheckEventAlarms();
         _alarmTimer.Start();
+
+        // Update-Prüfung: Reste eines früheren Updates wegräumen, dann kurz nach dem Start und alle 6 h bei GitHub fragen.
+        if (UpdateService.InstallableExePath() is { } exe) UpdateInstaller.CleanUp(exe);
+        _updateTimer.Tick += async (_, _) =>
+        {
+            _updateTimer.Interval = TimeSpan.FromHours(6);
+            if (!_overlaySettings.CheckForUpdates || _updating) return;
+            _update = await _updates.CheckAsync(CancellationToken.None);
+        };
+        _updateTimer.Start();
         if (_overlayStore.State == OverlaySettingsFileState.Foreign)
         {
             DetailText.Text = $"Hinweis: {_overlayStore.Path} ist nicht lesbar oder stammt nicht von diesem Programm – Standardwerte, die Datei bleibt unverändert.";
@@ -543,6 +561,52 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Beendet das Programm sauber: Aufnahme stoppen, Einstellungen speichern, Fenster schließen.</summary>
+    /// <summary>Hinweiszeile fürs Overlay: Fortschritt eines laufenden Updates oder „neue Version verfügbar“.</summary>
+    private string? UpdateLine() =>
+        _updateProgress ?? (_update is { } u && _overlaySettings.CheckForUpdates ? $"⬆ Neue Version {u.Tag} verfügbar – hier klicken zum Aktualisieren" : null);
+
+    /// <summary>Klick auf den Update-Hinweis: nachfragen, laden, prüfen, EXE austauschen, neu starten.</summary>
+    private async void StartUpdate()
+    {
+        if (_update is not { } info || _updating) return;
+        var owner = _overlay is { IsVisible: true } o ? (Window)o : this;
+        var notes = UpdateCheck.ShortNotes(info.Notes);
+        var exe = UpdateService.InstallableExePath();
+        if (!info.CanInstall || exe is null)
+        {
+            var open = MessageBox.Show(owner,
+                $"Version {info.Tag} ist verfügbar (du hast {AppRelease.Current}).\n\n{notes}\n\n" +
+                "Automatisch installieren geht hier nicht (keine geprüfte EXE im Release oder Entwicklungsversion). Download-Seite öffnen?",
+                "Update verfügbar", MessageBoxButton.YesNo, MessageBoxImage.Information);
+            if (open == MessageBoxResult.Yes) UpdateService.OpenReleasePage(info.Page);
+            return;
+        }
+
+        var answer = MessageBox.Show(owner,
+            $"Version {info.Tag} ist verfügbar (du hast {AppRelease.Current}).\n\n{notes}\n\n" +
+            "Jetzt herunterladen und den Meter neu starten? Einstellungen, Kämpfe und deine Icons im Dokumente-Ordner bleiben erhalten.\n" +
+            "Hinweis: Die EXE ist nicht signiert – Windows kann beim ersten Start warnen.",
+            "Update installieren", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes) return;
+
+        _updating = true;
+        _updateProgress = $"⬇ Lade {info.Tag} …";
+        try
+        {
+            var progress = new Progress<double>(p => _updateProgress = $"⬇ Lade {info.Tag} … {p * 100:0} %");
+            await _updates.InstallAsync(info, exe, progress, CancellationToken.None);
+            _updateProgress = $"✔ {info.Tag} installiert – starte neu …";
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+            ExitApp();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or UnauthorizedAccessException or InvalidOperationException or TaskCanceledException)
+        {
+            _updateProgress = null;
+            _updating = false;
+            MessageBox.Show(owner, $"Update fehlgeschlagen: {ex.Message}\nDie bisherige Version bleibt unverändert.", "Update", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     private void ExitApp()
     {
         _exiting = true;
@@ -695,7 +759,9 @@ public partial class MainWindow : Window
             banner: OverlayBanner,
             boss: OverlayBoss,
             bestOwnDps: BestOwnDps,
-            npcInfo: code => _npcNames.Lookup(code));
+            npcInfo: code => _npcNames.Lookup(code),
+            update: UpdateLine,
+            applyUpdate: StartUpdate);
         _overlay.Closed += (_, _) => OverlayButton.Content = "Overlay ein";
         _overlay.Show();
         OverlayButton.Content = "Overlay aus";

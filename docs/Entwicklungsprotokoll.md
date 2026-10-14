@@ -1734,3 +1734,33 @@ Ein funktionierendes Fenster oder Overlay bedeutet **nicht**, dass echter
 AION-2-Schaden gelesen wird. Das sind zwei getrennte Ziele: Werte werden erst
 angezeigt, wenn die zugehörigen Nachrichten anhand selbst erfasster Daten
 nachweislich verstanden sind. Unsichere oder fehlende Daten werden gekennzeichnet.
+
+### Update per Klick, neue Versionsnummer 0.0.1 (Stand 14.10.2026, ~17:40)
+
+- **Versionsschema:** eine Nummer für alles (SemVer) in `Directory.Build.props`, Start bei **0.0.1**. Sie steht in der
+  EXE, in den Einstellungen und im Tooltip des Overlay-Titels.
+- **Update-Prüfung** (Einstellung „Auf Updates prüfen“, Standard an):
+  - 10 s nach dem Start und danach alle 6 h liest der Meter `api.github.com/repos/unbreakablelp0-beep/aion-2-dpsmeter/releases`.
+    Er sendet dabei nichts außer der Anfrage.
+  - Gewählt wird das höchste gültige SemVer-Release. Entwürfe, Vorabversionen und alte Tags wie „v43“ werden ignoriert.
+  - Ist es neuer, erscheint im Overlay eine goldene, anklickbare Zeile.
+- **Installation per Klick:**
+  1. Rückfrage mit „Neu in dieser Version“.
+  2. Download nur über HTTPS von github.com bzw. den GitHub-Asset-Hosts und nur aus diesem Repository.
+  3. Prüfungen: Größe, Programmkopf „MZ“ und **SHA-256** (aus GitHubs `digest` oder der Datei `SHA256SUMS` im Release).
+  4. Austausch: alte EXE → `.old`, neue an ihren Platz, Neustart. Der nächste Start räumt die `.old` weg.
+  - Ohne Prüfsumme oder in der Entwicklungsumgebung öffnet der Meter nur die Release-Seite.
+  - Die eigene EXE mit eingebetteten Icons wird ebenfalls ersetzt. Die Icons kommen danach aus `Dokumente\Aion2DpsMeter\Icons`.
+- **Release-Ablauf:**
+  1. Version in `Directory.Build.props` erhöhen.
+  2. `publish-release.ps1` ausführen; es erzeugt `artifacts\<Version>\release\Aion2DpsMeter-<Version>-win-x64.exe`
+     und `SHA256SUMS`.
+  3. Auf GitHub ein Release mit Tag `v<Version>` anlegen und beide Dateien anhängen.
+  - Die eigene EXE mit Icons baut `publish-persoenlich.ps1 -Output artifacts\<Version>\eigene`. Sie wird nie veröffentlicht.
+
+| Prüfung (~17:40) | Ergebnis |
+|---|---|
+| Voller `dotnet build` | **0 Warnungen, 0 Fehler** |
+| Tests | Core **360/360** (neu: SemVer, Release-Auswahl, Hosts, Prüfsummen, Austausch), App **14/14**, Npcap **32/32** |
+| Builds | `artifacts/0.0.1/release` (ohne Spielgrafiken, PNG 193), `artifacts/0.0.1/eigene` (mit Icons, PNG 202) |
+| Im Spiel / echtes Update | **nicht geprüft** (es gibt noch kein 0.0.x-Release; nichts gestartet) |

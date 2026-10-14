@@ -71,6 +71,9 @@ public sealed class OverlaySettingsWindow : Window
                  "nicht im exklusiven Vollbild. Werte nach Community-Hypothese (abgeglichen, nicht offiziell)."),
             Setting("Overlay-Position", ActionButton("Zurücksetzen", () => Change(s => s with { Left = 40, Top = 120, Width = 360 })),
                 "Holt das Overlay an die Standardstelle oben links zurück."),
+            Setting("Auf Updates prüfen", Toggle(() => _get().CheckForUpdates, v => Change(s => s with { CheckForUpdates = v })),
+                $"Du hast {Aion2DpsMeter.Core.Updates.AppRelease.Current}. Fragt beim Start und alle 6 Stunden bei GitHub nach einer neuen Version " +
+                "(nur lesen, es werden keine Daten gesendet). Gibt es eine, erscheint im Overlay ein Hinweis – ein Klick darauf installiert sie nach Rückfrage."),
             Setting("Programm beenden", ActionButton("Beenden", exit), "Aufnahme stoppen, Einstellungen speichern, schließen."));
 
         _pages["⚔  Kampf"] = () => Page(
