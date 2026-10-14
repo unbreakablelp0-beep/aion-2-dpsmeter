@@ -487,6 +487,49 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Gruppen-Lobby: Rahmen, in denen mehrere Lobby-Mitglieder (Längenbyte + Name) stehen. Die Namen kommen nur aus der
+    /// Umgebungsvariable AION2DPS_LOBBY_NAMES (Komma-getrennt, nur lokal) und werden maskiert ausgegeben.
+    /// </summary>
+    [Fact]
+    public async Task SearchesLobby()
+    {
+        var path = Environment.GetEnvironmentVariable(PathVariable);
+        var names = Environment.GetEnvironmentVariable("AION2DPS_LOBBY_NAMES")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (string.IsNullOrWhiteSpace(path) || names is not { Length: > 0 })
+        {
+            output.WriteLine("Nicht ausgeführt: Aufnahme oder AION2DPS_LOBBY_NAMES fehlt.");
+            return;
+        }
+
+        static string Mask(string name) => $"{name[0]}…({name.Length})";
+        var needles = names.Select(n =>
+        {
+            var b = System.Text.Encoding.UTF8.GetBytes(n);
+            return (Name: n, Needle: new[] { (byte)b.Length }.Concat(b).ToArray(), Length: b.Length);
+        }).ToList();
+
+        DateTimeOffset? start = null;
+        var all = Enumerable.Range(0, 0x10000).Select(t => (ushort)t).ToHashSet();
+        var analyzer = new RecordingAnalyzer(null, all, (_, frame) =>
+        {
+            start ??= frame.Time;
+            var b = frame.Body;
+            var found = needles.Select(n => (n.Name, n.Length, At: b.AsSpan().IndexOf(n.Needle))).Where(x => x.At >= 0).ToList();
+            if (found.Count == 0) return;
+            output.WriteLine($"LOBBY {frame.Type >> 8:X2} {frame.Type & 0xFF:X2} bei {(frame.Time - start.Value).TotalSeconds:0.0} s, {b.Length} B, Namen {found.Count}");
+            foreach (var f in found.OrderBy(f => f.At))
+            {
+                var before = Convert.ToHexString(b, Math.Max(0, f.At - 12), Math.Min(12, f.At));
+                var afterStart = f.At + 1 + f.Length;
+                var after = Convert.ToHexString(b, afterStart, Math.Min(32, b.Length - afterStart));
+                output.WriteLine($"   {Mask(f.Name)} @{f.At}: vor {before} | nach {after}");
+            }
+        });
+        await new PcapFileSource().ReadRawAsync(path, analyzer.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        analyzer.GetResult();
+    }
+
     /// <summary>Ping passiv aus der Aufnahme (TCP-Sequenz/ACK der Spielverbindung): Verlauf in 10-s-Schritten.</summary>
     [Fact]
     public async Task MeasuresPingPassively()
