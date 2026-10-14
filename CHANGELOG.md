@@ -1,5 +1,8 @@
 # Patchnotes
 
+## Unveröffentlicht
+- Od-Energie: Solange noch kein Wert erkannt wurde, steht ein ausgegrauter Kristall mit „–“ da (Hinweis beim Drüberfahren), statt dass die Anzeige fehlt.
+
 ## 0.0.6 – 14.10.2026
 - Neu: Gruppen-Lobby – bist du in einer Gruppe und läuft kein Kampf, zeigt AionMeta alle Mitglieder mit Stufe, GS und KS. Beitritt und Austritt siehst du sofort.
 - Neu: Zusatz-Od-Energie (der blaue Wert, z. B. +95) unten in der Fußzeile, mit eigenem Kristall-Symbol.

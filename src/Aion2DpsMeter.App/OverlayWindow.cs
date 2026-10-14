@@ -754,15 +754,27 @@ public sealed class OverlayWindow : Window
     /// <summary>Zusatz-Od-Energie „+95“; ausgeblendet, solange das Spiel den Wert noch nicht geschickt hat.</summary>
     private void UpdateOd()
     {
-        if (!_settings.ShowOd || _odValue?.Invoke() is not { } bonus)
+        if (!_settings.ShowOd)
         {
             _od.Visibility = Visibility.Collapsed;
             return;
         }
 
         _od.Visibility = Visibility.Visible;
-        _odText.Text = $"+{bonus.ToString("#,0", System.Globalization.CultureInfo.GetCultureInfo("de-DE"))}";
         _odText.FontSize = Math.Max(9, FontSize - 2);
+        if (_odValue?.Invoke() is { } bonus)
+        {
+            _od.Opacity = 1;
+            _odText.Text = $"+{bonus.ToString("#,0", System.Globalization.CultureInfo.GetCultureInfo("de-DE"))}";
+            _od.ToolTip = "Zusatz-Od-Energie (aus dem Spiel gelesen)";
+        }
+        else
+        {
+            // Noch kein Wert: dezent ausgegraut statt einer erfundenen Zahl.
+            _od.Opacity = 0.45;
+            _odText.Text = "–";
+            _od.ToolTip = "Od-Energie: wird beim Einloggen oder beim Einlösen von Zusatz-Energie erkannt (AionMeta vor dem Spiel starten).";
+        }
     }
 
     /// <summary>Selbst gezeichnetes Od-Symbol: blauer Kristall mit hellem Kern.</summary>
