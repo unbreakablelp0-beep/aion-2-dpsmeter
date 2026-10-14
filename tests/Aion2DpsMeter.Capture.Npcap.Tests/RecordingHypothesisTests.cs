@@ -305,6 +305,170 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
         }
     }
 
+    /// <summary>
+    /// Suche nach Od-Energie: Rahmen, in denen 840 (Maximum) zusammen mit 200 oder 240 (Zusatzwert) bzw. 15 vorkommt –
+    /// als u16/u32/u64 (LE) oder Varint. Gibt Typ, Zeit und Bytes um die Fundstelle aus.
+    /// </summary>
+    [Fact]
+    public async Task SearchesOdEnergy()
+    {
+        var path = Environment.GetEnvironmentVariable(PathVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            output.WriteLine($"Nicht ausgeführt: {PathVariable} ist nicht gesetzt.");
+            return;
+        }
+
+        static List<int> Find(byte[] b, long value)
+        {
+            var hits = new List<int>();
+            for (var i = 0; i + 2 <= b.Length; i++)
+            {
+                if (BitConverter.ToUInt16(b, i) == value && (i + 4 > b.Length || BitConverter.ToUInt32(b, i) == value || true)) hits.Add(i);
+            }
+
+            // Varint
+            var v = new List<byte>();
+            var x = (ulong)value;
+            do { var by = (byte)(x & 0x7F); x >>= 7; v.Add(x == 0 ? by : (byte)(by | 0x80)); } while (x != 0);
+            for (var i = 0; i + v.Count <= b.Length; i++)
+            {
+                if (b.AsSpan(i, v.Count).SequenceEqual(v.ToArray()) && !hits.Contains(i)) hits.Add(-(i + 1)); // negativ = Varint
+            }
+
+            return hits;
+        }
+
+        DateTimeOffset? start = null;
+        var all = Enumerable.Range(0, 0x10000).Select(t => (ushort)t).ToHashSet();
+        var analyzer = new RecordingAnalyzer(null, all, (_, frame) =>
+        {
+            start ??= frame.Time;
+            var b = frame.Body;
+            var max = Find(b, 840);
+            if (max.Count == 0) return;
+            var a = Find(b, 200);
+            var n = Find(b, 240);
+            if (a.Count == 0 && n.Count == 0) return;
+            var at = Math.Abs(max[0]) - (max[0] < 0 ? 1 : 0);
+            var from = Math.Max(0, at - 24);
+            output.WriteLine($"OD {frame.Type >> 8:X2} {frame.Type & 0xFF:X2} bei {(frame.Time - start.Value).TotalSeconds:0.0} s, {b.Length} B: 840@{string.Join(",", max)} 200@{string.Join(",", a)} 240@{string.Join(",", n)} 15@{string.Join(",", Find(b, 15).Take(6))}");
+            output.WriteLine($"   {Convert.ToHexString(b, from, Math.Min(64, b.Length - from))}");
+        });
+        await new PcapFileSource().ReadRawAsync(path, analyzer.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        analyzer.GetResult();
+
+        // Übergang 200 → 240 an derselben Stelle eines Rahmentyps (u16 LE oder Varint), auch über verschiedene Rahmen.
+        var seen200 = new Dictionary<(ushort Type, int Offset, bool Varint), double>();
+        DateTimeOffset? t0 = null;
+        var transitions = new RecordingAnalyzer(null, all, (_, frame) =>
+        {
+            t0 ??= frame.Time;
+            var t = (frame.Time - t0.Value).TotalSeconds;
+            var b = frame.Body;
+            for (var i = 0; i + 2 <= b.Length; i++)
+            {
+                var u = BitConverter.ToUInt16(b, i);
+                var var200 = b[i] == 0xC8 && b[i + 1] == 0x01;
+                var var240 = b[i] == 0xF0 && b[i + 1] == 0x01;
+                foreach (var (varint, is200, is240) in new[] { (false, u == 200, u == 240), (true, var200, var240) })
+                {
+                    var key = (frame.Type, i, varint);
+                    if (is200) seen200[key] = t;
+                    else if (is240 && seen200.TryGetValue(key, out var when))
+                    {
+                        var from = Math.Max(0, i - 16);
+                        output.WriteLine($"WECHSEL {frame.Type >> 8:X2} {frame.Type & 0xFF:X2} @{i} ({(varint ? "varint" : "u16")}, {b.Length} B): 200 bei {when:0.0} s → 240 bei {t:0.0} s | {Convert.ToHexString(b, from, Math.Min(40, b.Length - from))}");
+                    }
+                }
+            }
+        });
+        await new PcapFileSource().ReadRawAsync(path, transitions.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        transitions.GetResult();
+
+        // Weitere Kandidaten: Summe (215 → 255), skaliert (×10, ×100), als u32 LE oder Varint – ohne Kampfpakete (x 38).
+        var pairs = new (long From, long To)[] { (200, 240), (215, 255), (2000, 2400), (20000, 24000), (2150, 2550), (21500, 25500) };
+        var last = new Dictionary<(ushort Type, int Offset, int Kind, long From), double>();
+        DateTimeOffset? t1 = null;
+        static byte[] Varint(long value)
+        {
+            var v = new List<byte>();
+            var x = (ulong)value;
+            do { var by = (byte)(x & 0x7F); x >>= 7; v.Add(x == 0 ? by : (byte)(by | 0x80)); } while (x != 0);
+            return v.ToArray();
+        }
+
+        var wide = new RecordingAnalyzer(null, all, (_, frame) =>
+        {
+            if ((frame.Type & 0xFF) == 0x38) return;
+            t1 ??= frame.Time;
+            var t = (frame.Time - t1.Value).TotalSeconds;
+            var b = frame.Body;
+            foreach (var (from, to) in pairs)
+            {
+                var vf = Varint(from);
+                var vt = Varint(to);
+                for (var i = 0; i < b.Length; i++)
+                {
+                    var u32 = i + 4 <= b.Length ? BitConverter.ToUInt32(b, i) : uint.MaxValue;
+                    var u16 = i + 2 <= b.Length ? BitConverter.ToUInt16(b, i) : ushort.MaxValue;
+                    bool Var(byte[] v) => i + v.Length <= b.Length && b.AsSpan(i, v.Length).SequenceEqual(v);
+                    foreach (var (kind, isFrom, isTo) in new[] { (0, u16 == from, u16 == to), (1, u32 == from, u32 == to), (2, Var(vf), Var(vt)) })
+                    {
+                        var key = (frame.Type, i, kind, from);
+                        if (isFrom) last[key] = t;
+                        else if (isTo && last.TryGetValue(key, out var when))
+                        {
+                            var start2 = Math.Max(0, i - 16);
+                            output.WriteLine($"KANDIDAT {frame.Type >> 8:X2} {frame.Type & 0xFF:X2} @{i} {new[] { "u16", "u32", "varint" }[kind]} {from}→{to} ({when:0.0}→{t:0.0} s, {b.Length} B) | {Convert.ToHexString(b, start2, Math.Min(48, b.Length - start2))}");
+                        }
+                    }
+                }
+            }
+        });
+        await new PcapFileSource().ReadRawAsync(path, wide.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        wide.GetResult();
+
+        // Einzelne Rahmen (seltene Typen), die 240 oder 255 enthalten – der neue Wert kommt evtl. nur einmal nach dem Einlösen.
+        var typeCount = new Dictionary<ushort, int>();
+        var hits240 = new List<(double T, ushort Type, int Len, string Hex)>();
+        DateTimeOffset? t2 = null;
+        var single = new RecordingAnalyzer(null, all, (_, frame) =>
+        {
+            t2 ??= frame.Time;
+            typeCount[frame.Type] = typeCount.GetValueOrDefault(frame.Type) + 1;
+            if ((frame.Type & 0xFF) == 0x38) return;
+            var b = frame.Body;
+            for (var i = 0; i + 2 <= b.Length; i++)
+            {
+                var u = BitConverter.ToUInt16(b, i);
+                var v = b[i] == 0xF0 && b[i + 1] == 0x01 || b[i] == 0xFF && b[i + 1] == 0x01;
+                if (u is 240 or 255 || v)
+                {
+                    var from = Math.Max(0, i - 12);
+                    hits240.Add(((frame.Time - t2.Value).TotalSeconds, frame.Type, b.Length, $"@{i} {Convert.ToHexString(b, from, Math.Min(36, b.Length - from))}"));
+                    break;
+                }
+            }
+        });
+        await new PcapFileSource().ReadRawAsync(path, single.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        single.GetResult();
+        // Alle 0C-61-Rahmen vollständig (Kandidat Od-Energie).
+        DateTimeOffset? t3 = null;
+        var od = new RecordingAnalyzer(null, new HashSet<ushort> { 0x0C61 }, (_, frame) =>
+        {
+            t3 ??= frame.Time;
+            output.WriteLine($"OD61 bei {(frame.Time - t3.Value).TotalSeconds:0.0} s: {Convert.ToHexString(frame.Body)}");
+        });
+        await new PcapFileSource().ReadRawAsync(path, od.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        od.GetResult();
+
+        foreach (var h in hits240.Where(h => typeCount[h.Type] <= 6))
+        {
+            output.WriteLine($"SELTEN {h.Type >> 8:X2} {h.Type & 0xFF:X2} (×{typeCount[h.Type]}) bei {h.T:0.0} s, {h.Len} B: {h.Hex}");
+        }
+    }
+
     /// <summary>Ping passiv aus der Aufnahme (TCP-Sequenz/ACK der Spielverbindung): Verlauf in 10-s-Schritten.</summary>
     [Fact]
     public async Task MeasuresPingPassively()

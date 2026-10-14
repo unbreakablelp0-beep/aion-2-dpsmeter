@@ -1,5 +1,8 @@
 # Patchnotes
 
+## Unveröffentlicht
+- Knöpfe im Overlay: sanfte Hover-Animation (Hintergrund in der Themenfarbe, Symbol wird hell und etwas größer).
+
 ## 0.0.5 – 14.10.2026
 - Neu: Ping zum Spielserver unten im Overlay, grün/gelb/rot (Einstellungen → Anzeige → „Ping anzeigen“).
 - Der Ping wird nur passiv aus der Spielverbindung gemessen, es wird nichts gesendet.

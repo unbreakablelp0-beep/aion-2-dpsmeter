@@ -785,18 +785,39 @@ public sealed class OverlayWindow : Window
 
     private static TextBlock IconButton(string symbol, string tooltip, Action action)
     {
+        // Hover: weich eingeblendeter Hintergrund in der Akzentfarbe, Symbol wird hell und etwas größer.
+        var hoverBg = new SolidColorBrush(Colors.Transparent);
+        var scale = new ScaleTransform(1, 1);
         var button = new TextBlock
         {
             Text = symbol,
             FontFamily = SymbolFont,
             Foreground = DimBrush,
-            Margin = new Thickness(8, 0, 0, 0),
+            Background = hoverBg,
+            Padding = new Thickness(4, 1, 4, 1),
+            Margin = new Thickness(2, 0, 0, 0),
             Cursor = Cursors.Hand,
             ToolTip = tooltip,
             VerticalAlignment = VerticalAlignment.Center,
+            RenderTransform = scale,
+            RenderTransformOrigin = new Point(0.5, 0.5),
         };
-        button.MouseEnter += (_, _) => button.Foreground = TextBrush;
-        button.MouseLeave += (_, _) => button.Foreground = DimBrush;
+
+        void Animate(bool over)
+        {
+            var time = TimeSpan.FromMilliseconds(over ? 120 : 200);
+            var ease = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+            var accent = ThemeColors.Accent;
+            hoverBg.BeginAnimation(SolidColorBrush.ColorProperty, new System.Windows.Media.Animation.ColorAnimation(
+                over ? Color.FromArgb(0x55, accent.R, accent.G, accent.B) : Colors.Transparent, time) { EasingFunction = ease });
+            var size = new System.Windows.Media.Animation.DoubleAnimation(over ? 1.15 : 1, time) { EasingFunction = ease };
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, size);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, size);
+            button.Foreground = over ? TextBrush : DimBrush;
+        }
+
+        button.MouseEnter += (_, _) => Animate(true);
+        button.MouseLeave += (_, _) => Animate(false);
         WireClick(button, action);
         return button;
     }
