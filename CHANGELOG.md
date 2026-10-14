@@ -1,12 +1,8 @@
 # Patchnotes
 
-## Unveröffentlicht
-- Od-Energie jetzt komplett: aufladender Wert + Zusatz zusammengerechnet (z. B. 110 = 15 + 95). In den Einstellungen umschaltbar auf „15 (+95)“ wie im Spiel.
-- Od-Energie: Solange noch kein Wert erkannt wurde, steht ein ausgegrauter Kristall mit „–“ da (Hinweis beim Drüberfahren), statt dass die Anzeige fehlt.
-
 ## 0.0.6 – 14.10.2026
 - Neu: Gruppen-Lobby – bist du in einer Gruppe und läuft kein Kampf, zeigt AionMeta alle Mitglieder mit Stufe, GS und KS. Beitritt und Austritt siehst du sofort.
-- Neu: Zusatz-Od-Energie (der blaue Wert, z. B. +95) unten in der Fußzeile, mit eigenem Kristall-Symbol.
+- Neu: Od-Energie unten in der Fußzeile mit eigenem Kristall-Symbol – Grundwert und Zusatz zusammengerechnet (z. B. 575 = 565 + 10), in den Einstellungen umschaltbar auf „565 (+10)“ wie im Spiel. Erscheint nach dem Einloggen oder Einlösen; vorher ein ausgegrauter Kristall.
 - Neues Programm-Symbol: AionMeta hat jetzt ein eigenes Logo – in der Taskleiste, im Infobereich und an allen Fenstern.
 - AionMeta ist jetzt in der Windows-Taskleiste sichtbar.
 - Fenster ohne Windows-Titelleiste: Einstellungen, Details, Kämpfe, Statistik, „Was ist neu“ und die Update-Abfrage haben eine eigene schlanke Kopfzeile im Stil des Overlays (Esc schließt).
