@@ -39,4 +39,14 @@ aus einem Screenshot ausgeschnitten hat. Sie darf nicht weitergegeben oder verö
 Zum Weitergeben die Endnutzer-EXE (ohne fremde Grafiken) verwenden.
 '@
 Set-Content -Path (Join-Path $Output 'NICHT-WEITERGEBEN.txt') -Value $note -Encoding utf8
+
+# Patchnotes dieser Version aus CHANGELOG.md (wie im Release-Ordner).
+[xml]$props = Get-Content (Join-Path $PSScriptRoot 'Directory.Build.props')
+$version = ($props.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
+$section = @(); $inside = $false
+foreach ($line in Get-Content (Join-Path $PSScriptRoot 'CHANGELOG.md') -Encoding utf8) {
+    if ($line -match '^##\s+v?(\d+\.\d+\.\d+)') { $inside = ($Matches[1] -eq $version); continue }
+    if ($inside -and $line.StartsWith('- ')) { $section += $line }
+}
+[IO.File]::WriteAllText((Join-Path $Output 'PATCHNOTES.txt'), (($section -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
 Write-Host "Fertig: $Output"
