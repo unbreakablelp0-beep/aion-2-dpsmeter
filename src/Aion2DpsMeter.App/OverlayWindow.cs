@@ -25,6 +25,7 @@ public sealed class OverlayWindow : Window
     private const int WsExTransparent = 0x00000020;
     private const int WsExToolWindow = 0x00000080;
     private const int WsExNoActivate = 0x08000000;
+    private const int WsExAppWindow = 0x00040000;
 
     private static readonly Brush TextBrush = Frozen(Color.FromRgb(0xE6, 0xE8, 0xEE));
     // Nebentexte und Namen: Farbe je Kontraststufe (Einstellungen → Anzeige). Je Thread eigene, nicht eingefrorene Pinsel,
@@ -187,7 +188,8 @@ public sealed class OverlayWindow : Window
         Background = Brushes.Transparent;
         Topmost = true;
         ShowActivated = false;
-        ShowInTaskbar = false;
+        ShowInTaskbar = true;
+        Icon = AppIcon.Window;
         ResizeMode = ResizeMode.CanResizeWithGrip;
         WindowStartupLocation = WindowStartupLocation.Manual;
         Left = _settings.Left;
@@ -433,7 +435,8 @@ public sealed class OverlayWindow : Window
         var handle = new WindowInteropHelper(this).Handle;
         if (handle == IntPtr.Zero) return;
 
-        var style = GetWindowLong(handle, GwlExStyle) | WsExNoActivate | WsExToolWindow;
+        // Taskleistenknopf (App-Fenster) statt Werkzeugfenster: AionMeta ist in der Taskleiste sichtbar, nimmt aber weiter keinen Fokus.
+        var style = (GetWindowLong(handle, GwlExStyle) | WsExNoActivate | WsExAppWindow) & ~WsExToolWindow;
         style = _settings.ClickThrough ? style | WsExTransparent : style & ~WsExTransparent;
         SetWindowLong(handle, GwlExStyle, style);
     }

@@ -41,3 +41,9 @@ fertigkeiten*.json
 *.jpeg
 *.ico
 NICHT-WEITERGEBEN.txt
+
+# Ausnahmen: eigenes Logo des Besitzers (Programm-Symbol und Webseite).
+!docs/assets/*.png
+!docs/assets/*.jpg
+!docs/assets/*.ico
+!src/Aion2DpsMeter.App/AionMeta.ico

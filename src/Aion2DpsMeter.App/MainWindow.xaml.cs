@@ -583,20 +583,20 @@ public partial class MainWindow : Window
         var exe = UpdateService.InstallableExePath();
         if (!info.CanInstall || exe is null)
         {
-            var open = MessageBox.Show(owner,
+            var open = ConfirmDialog.Ask(owner, "Update verfügbar",
                 $"Version {info.Tag} ist verfügbar (du hast {AppRelease.Current}).\n\n{notes}\n\n" +
                 "Automatisch installieren geht hier nicht (keine geprüfte EXE im Release oder Entwicklungsversion). Download-Seite öffnen?",
-                "Update verfügbar", MessageBoxButton.YesNo, MessageBoxImage.Information);
-            if (open == MessageBoxResult.Yes) UpdateService.OpenReleasePage(info.Page);
+                "Seite öffnen", "Später");
+            if (open) UpdateService.OpenReleasePage(info.Page);
             return;
         }
 
-        var answer = MessageBox.Show(owner,
+        var answer = ConfirmDialog.Ask(owner, "Update installieren",
             $"Version {info.Tag} ist verfügbar (du hast {AppRelease.Current}).\n\n{notes}\n\n" +
             "Jetzt herunterladen und den Meter neu starten? Einstellungen, Kämpfe und deine Icons im Dokumente-Ordner bleiben erhalten.\n" +
             "Hinweis: Die EXE ist nicht signiert – Windows kann beim ersten Start warnen.",
-            "Update installieren", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (answer != MessageBoxResult.Yes) return;
+            "Jetzt aktualisieren", "Später");
+        if (!answer) return;
 
         _updating = true;
         _updateProgress = $"⬇ Lade {info.Tag} …";
@@ -612,7 +612,7 @@ public partial class MainWindow : Window
         {
             _updateProgress = null;
             _updating = false;
-            MessageBox.Show(owner, $"Update fehlgeschlagen: {ex.Message}\nDie bisherige Version bleibt unverändert.", "Update", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ConfirmDialog.Inform(owner, "Update", $"Update fehlgeschlagen: {ex.Message}\nDie bisherige Version bleibt unverändert.");
         }
     }
 

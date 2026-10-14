@@ -14,6 +14,7 @@ public sealed class TrayIcon : IDisposable
     private readonly Forms.NotifyIcon _icon;
     private readonly Forms.ToolStripMenuItem _clickThrough;
     private readonly Icon _image;
+    private readonly bool _drawn; // selbst gezeichnet (GetHicon) → beim Aufräumen DestroyIcon nötig
 
     public TrayIcon(Func<bool> isClickThrough, Action disableClickThrough, Action toggleClickThrough, Action toggleOverlay, Action openSettings, Action exit)
     {
@@ -26,7 +27,10 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(new Forms.ToolStripMenuItem("Beenden", null, (_, _) => exit()));
         menu.Opening += (_, _) => _clickThrough.Checked = isClickThrough();
 
-        _image = CreateImage();
+        // Programm-Logo; nur wenn es fehlt, das gezeichnete Ersatzsymbol.
+        var logo = AppIcon.Tray(System.Windows.Forms.SystemInformation.SmallIconSize.Width);
+        _drawn = logo is null;
+        _image = logo ?? CreateImage();
         _icon = new Forms.NotifyIcon
         {
             Icon = _image,
@@ -45,7 +49,7 @@ public sealed class TrayIcon : IDisposable
         _icon.Visible = false;
         _icon.ContextMenuStrip?.Dispose();
         _icon.Dispose();
-        DestroyIcon(_image.Handle);
+        if (_drawn) DestroyIcon(_image.Handle);
         _image.Dispose();
     }
 

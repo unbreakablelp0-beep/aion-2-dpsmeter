@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AionMeta – DPS-Meter für AION 2</title>
 <meta name="description" content="Inoffizielles, rein passives DPS-Overlay für AION 2 (EU): DPS je Spieler, Boss-HP, Berserk-Timer, Kampfkraft, Tode, Kampfverlauf und Updates per Klick.">
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/logo-96.png">
+<meta property="og:title" content="AionMeta – DPS-Meter für AION 2">
+<meta property="og:description" content="Live-DPS, Boss-HP, Berserk-Timer, Kampfkraft und Tode als Overlay. Kostenlos, rein passiv, Updates per Klick.">
+<meta property="og:image" content="https://unbreakablelp0-beep.github.io/aion-2-dpsmeter/assets/logo.jpg">
+<meta property="og:url" content="https://unbreakablelp0-beep.github.io/aion-2-dpsmeter/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#0b0d14">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -48,6 +57,7 @@
   header.top { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(14px); background: rgba(7,8,12,.6); border-bottom: 1px solid var(--line); }
   header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .2px; }
+  .brand .logo-img { width: 34px; height: 34px; border-radius: 9px; box-shadow: 0 4px 18px rgba(80,140,255,.45); }
   .brand .logo { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(135deg, var(--violet), var(--pink)); box-shadow: 0 4px 18px rgba(155,108,255,.45); }
   nav { display: flex; align-items: center; gap: 22px; }
   nav a { color: var(--dim); text-decoration: none; font-size: 15px; font-weight: 500; }
@@ -79,6 +89,22 @@
       radial-gradient(400px 300px at 50% 50%, rgba(40,60,40,.6), transparent 80%),
       linear-gradient(160deg, #1d1612, #120d10 60%, #0b0a0d);
     box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  /* Zweites Fenster hinter dem Overlay: DPS-Kurve aus dem Detailfenster */
+  .chart-card { position: absolute; z-index: 0; top: 16px; right: -14px; width: 64%; padding: 8px 12px 10px; border-radius: 12px;
+    background: rgba(16,18,26,.9); border: 1px solid rgba(255,126,179,.35); box-shadow: 0 18px 50px rgba(0,0,0,.55);
+    transform: rotate(3deg); transform-origin: top right; font: 12px/1.3 "Segoe UI", Inter, sans-serif; color: #e6e8ee; }
+  .cc-head { display: flex; align-items: center; gap: 7px; font-weight: 600; padding: 2px 2px 8px; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .cc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 8px var(--pink); }
+  .cc-x { margin-left: auto; color: #8f97a8; }
+  .cc-tiles { display: flex; gap: 8px; margin: 8px 0 6px; }
+  .cc-tiles div { flex: 1; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06); border-radius: 8px; padding: 4px 8px; }
+  .cc-tiles small { display: block; color: #8f97a8; font-size: 10px; }
+  .cc-tiles b { font: 700 16px var(--num); }
+  .cc-svg { width: 100%; height: 110px; display: block; }
+  #cc-path { stroke-dasharray: 900; stroke-dashoffset: 900; animation: draw 2.2s ease-out .3s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .cc-axis { display: flex; justify-content: space-between; color: #6f7788; font-size: 10px; }
+  .stage .ov { margin: 150px 0 0 0; }
   .stage::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.015) 0 2px, transparent 2px 9px); pointer-events: none; }
   .stage .tag { position: absolute; right: 14px; bottom: 10px; font-size: 11px; color: rgba(255,255,255,.35); z-index: 2; }
 
@@ -187,6 +213,8 @@
   @media (max-width: 480px) {
     .steps { grid-template-columns: 1fr; }
     .stage { padding: 20px 10px; }
+    .chart-card { width: 82%; right: -8px; }
+    .stage .ov { margin-top: 170px; }
     .ov { font-size: 12px; }
     .r .m { display: none; }
   }
@@ -197,7 +225,7 @@
 
 <header class="top">
   <div class="wrap">
-    <div class="brand"><span class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 20V12M10 20V6M16 20v-9M22 20V3"/></svg></span>AionMeta</div>
+    <div class="brand"><img class="logo-img" src="assets/logo-96.png" alt="" width="34" height="34">AionMeta</div>
     <nav>
       <a href="#funktionen">Funktionen</a>
       <a href="#updates">Updates</a>
@@ -227,6 +255,21 @@
     </div>
 
     <div class="stage">
+      <div class="chart-card" aria-label="Beispiel: DPS-Kurve im Detailfenster (erfundene Werte)">
+        <div class="cc-head"><span class="cc-dot"></span>Spieler-Details · Lyra<span class="cc-x">✕</span></div>
+        <div class="cc-tiles"><div><small>DPS</small><b id="cc-dps">41,6K</b></div><div><small>Spitze</small><b id="cc-peak">58,2K</b></div><div><small>Krit</small><b>34 %</b></div></div>
+        <svg class="cc-svg" viewBox="0 0 300 120" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="cc-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b38bff" stop-opacity=".55"/><stop offset="1" stop-color="#b38bff" stop-opacity="0"/></linearGradient>
+            <linearGradient id="cc-line" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9b6cff"/><stop offset="1" stop-color="#ff7eb3"/></linearGradient>
+          </defs>
+          <g stroke="rgba(255,255,255,.07)"><line x1="0" y1="30" x2="300" y2="30"/><line x1="0" y1="60" x2="300" y2="60"/><line x1="0" y1="90" x2="300" y2="90"/></g>
+          <path id="cc-area" fill="url(#cc-fill)"/>
+          <path id="cc-path" fill="none" stroke="url(#cc-line)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle id="cc-peak-dot" r="4" fill="#ff7eb3" stroke="#fff" stroke-width="1.5"/>
+        </svg>
+        <div class="cc-axis"><span>0:00</span><span>0:30</span><span>1:00</span><span>1:30</span></div>
+      </div>
       <div class="ov" id="ov" aria-label="Beispiel des Overlays (erfundene Namen)">
         <div class="ov-head">
           <div class="l"><span class="ov-dot"></span><b>Kampf</b><span class="t" id="ov-time">1:42</span></div>
@@ -420,6 +463,29 @@
   };
   tick();
   setInterval(tick, 1000);
+
+  // ---- DPS-Kurve im Hintergrund-Fenster (erfundene Werte, läuft leicht weiter) ----
+  (() => {
+    const pts = [];
+    let v = 30;
+    for (let i = 0; i < 40; i++) { v = Math.max(8, Math.min(58, v + (Math.random() - 0.42) * 9 + (i === 24 ? 18 : 0))); pts.push(v); }
+    const fmt = (x) => x.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "K";
+    const draw = () => {
+      const max = Math.max(...pts) * 1.12;
+      const xy = pts.map((p, i) => [i / (pts.length - 1) * 300, 118 - p / max * 110]);
+      const line = xy.map(([x, y], i) => (i ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1)).join(" ");
+      document.getElementById("cc-path").setAttribute("d", line);
+      document.getElementById("cc-area").setAttribute("d", line + " L300,120 L0,120 Z");
+      const peak = pts.indexOf(Math.max(...pts));
+      const dot = document.getElementById("cc-peak-dot");
+      dot.setAttribute("cx", xy[peak][0]);
+      dot.setAttribute("cy", xy[peak][1]);
+      document.getElementById("cc-peak").textContent = fmt(Math.max(...pts));
+      document.getElementById("cc-dps").textContent = fmt(pts.reduce((a, b) => a + b, 0) / pts.length);
+    };
+    draw();
+    setInterval(() => { const last = pts[pts.length - 1]; pts.shift(); pts.push(Math.max(8, Math.min(58, last + (Math.random() - 0.5) * 10))); draw(); }, 1500);
+  })();
 
   // ---- Patchnotes aus CHANGELOG.md (dieselbe Quelle wie im Programm) ----
   (async () => {

@@ -1,6 +1,9 @@
 # Patchnotes
 
 ## Unveröffentlicht
+- Neues Programm-Symbol: AionMeta hat jetzt ein eigenes Logo – in der Taskleiste, im Infobereich und an allen Fenstern.
+- AionMeta ist jetzt in der Windows-Taskleiste sichtbar.
+- Fenster ohne Windows-Titelleiste: Einstellungen, Details, Kämpfe, Statistik, „Was ist neu“ und die Update-Abfrage haben eine eigene schlanke Kopfzeile im Stil des Overlays (Esc schließt).
 - Eigene Klassenbilder bekommen eine dunkle runde Unterlage mit Rand in Klassenfarbe – auch helle Bilder bleiben gut erkennbar.
 - Knöpfe im Overlay: sanfte Hover-Animation (Hintergrund in der Themenfarbe, Symbol wird hell und etwas größer).
 

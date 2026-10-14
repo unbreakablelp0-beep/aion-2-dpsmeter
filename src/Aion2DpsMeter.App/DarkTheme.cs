@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Markup;
 
@@ -24,6 +25,7 @@ public static class DarkTheme
     {
         ArgumentNullException.ThrowIfNull(window);
         window.Resources.MergedDictionaries.Add(Styles.Value!);
+        window.Icon ??= AppIcon.Window; // Programm-Logo in Titelleiste und Taskleiste
 
         // Über dem Spiel bleiben: Das Overlay nimmt nie den Fokus, daher darf Windows unsere Fenster nicht in den
         // Vordergrund holen – ohne „immer oben“ lägen sie hinter dem Spiel (Rückmeldung des Besitzers).
@@ -32,6 +34,117 @@ public static class DarkTheme
         window.Loaded += (_, _) => window.Activate();
         if (new WindowInteropHelper(window).Handle != IntPtr.Zero) DarkTitleBar(window);
         else window.SourceInitialized += (_, _) => DarkTitleBar(window);
+        CustomChrome(window);
+    }
+
+    /// <summary>
+    /// Statt der Windows-Titelleiste eine schlanke eigene Kopfzeile im Stil des Overlays: Logo, Titel, Minimieren (bei
+    /// änderbarer Größe) und Schließen mit Hover-Animation. Ziehen zum Verschieben, Größe am Rand, Esc und Alt+F4 schließen.
+    /// </summary>
+    private static void CustomChrome(Window window)
+    {
+        if (window.WindowStyle == WindowStyle.None) return;
+        var resizable = window.ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip;
+        System.Windows.Shell.WindowChrome.SetWindowChrome(window, new System.Windows.Shell.WindowChrome
+        {
+            CaptionHeight = 34,
+            ResizeBorderThickness = new Thickness(resizable ? 6 : 0),
+            GlassFrameThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            UseAeroCaptionButtons = false,
+        });
+        window.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key != System.Windows.Input.Key.Escape || e.Handled) return;
+            e.Handled = true;
+            window.Close();
+        };
+
+        var wrapped = false;
+        window.Loaded += (_, _) =>
+        {
+            if (wrapped || window.Content is not UIElement content) return;
+            wrapped = true;
+            window.Content = null;
+
+            var header = new DockPanel { Height = 34, Background = Brush(0xFF, 0x12, 0x14, 0x1A), LastChildFill = true };
+            var close = CaptionButton("✕", "Schließen (Esc)", Color(0xC8, 0xE0, 0x4A, 0x4A), window.Close);
+            DockPanel.SetDock(close, Dock.Right);
+            header.Children.Add(close);
+            if (resizable)
+            {
+                var minimize = CaptionButton("–", "Minimieren", ThemeColors.AccentAlpha(0x55) is System.Windows.Media.SolidColorBrush a ? a.Color : Color(0x55, 0x9B, 0x6C, 0xFF), () => window.WindowState = WindowState.Minimized);
+                DockPanel.SetDock(minimize, Dock.Right);
+                header.Children.Add(minimize);
+            }
+
+            var titleLine = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) };
+            if (AppIcon.Window is { } icon) titleLine.Children.Add(new System.Windows.Controls.Image { Source = icon, Width = 16, Height = 16, Margin = new Thickness(0, 0, 8, 0) });
+            var title = new System.Windows.Controls.TextBlock { FontWeight = FontWeights.SemiBold, Foreground = Brush(0xFF, 0xE6, 0xE8, 0xEE), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+            title.SetBinding(System.Windows.Controls.TextBlock.TextProperty, new System.Windows.Data.Binding(nameof(Window.Title)) { Source = window });
+            titleLine.Children.Add(title);
+            header.Children.Add(titleLine);
+
+            var root = new DockPanel();
+            DockPanel.SetDock(header, Dock.Top);
+            root.Children.Add(header);
+            root.Children.Add(content);
+            window.Content = new System.Windows.Controls.Border
+            {
+                BorderBrush = ThemeColors.AccentAlpha(0x70),
+                BorderThickness = new Thickness(1),
+                Background = window.Background,
+                Child = root,
+            };
+        };
+    }
+
+    private static System.Windows.Controls.TextBlock CaptionButton(string symbol, string tooltip, System.Windows.Media.Color hover, Action action)
+    {
+        var background = new System.Windows.Media.SolidColorBrush(Colors.Transparent);
+        var button = new System.Windows.Controls.TextBlock
+        {
+            Text = symbol,
+            Width = 40,
+            TextAlignment = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Padding = new Thickness(0, 8, 0, 0),
+            Foreground = Brush(0xFF, 0xB4, 0xBA, 0xC6),
+            Background = background,
+            Cursor = System.Windows.Input.Cursors.Hand,
+            ToolTip = tooltip,
+        };
+        System.Windows.Shell.WindowChrome.SetIsHitTestVisibleInChrome(button, true);
+        void Animate(bool over)
+        {
+            background.BeginAnimation(System.Windows.Media.SolidColorBrush.ColorProperty,
+                new System.Windows.Media.Animation.ColorAnimation(over ? hover : Colors.Transparent, TimeSpan.FromMilliseconds(over ? 110 : 180)));
+            button.Foreground = over ? Brush(0xFF, 0xFF, 0xFF, 0xFF) : Brush(0xFF, 0xB4, 0xBA, 0xC6);
+        }
+
+        button.MouseEnter += (_, _) => Animate(true);
+        button.MouseLeave += (_, _) => Animate(false);
+        button.MouseLeftButtonDown += (_, e) => e.Handled = true;
+        button.MouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            action();
+        };
+        return button;
+    }
+
+    private static System.Windows.Media.Color Color(byte a, byte r, byte g, byte b) => System.Windows.Media.Color.FromArgb(a, r, g, b);
+
+    private static System.Windows.Media.SolidColorBrush Brush(byte a, byte r, byte g, byte b)
+    {
+        var brush = new System.Windows.Media.SolidColorBrush(Color(a, r, g, b));
+        brush.Freeze();
+        return brush;
+    }
+
+    private static class Colors
+    {
+        public static readonly System.Windows.Media.Color Transparent = System.Windows.Media.Color.FromArgb(0, 0, 0, 0);
     }
 
     /// <summary>Kleine Eingabe-Dialoge: dunkler Hintergrund, heller Text, dunkle Knöpfe und Titelleiste.</summary>
