@@ -223,7 +223,7 @@
         <a class="btn ghost" href="#installation">So funktioniert's</a>
       </div>
       <div class="meta"><span>Windows 11</span><span>Eine Datei, keine Installation</span><span>Updates per Klick</span></div>
-      <div class="downloads" id="downloads" hidden><b id="dl-count">0</b> Downloads</div>
+      <div class="downloads" id="downloads" hidden><b id="dl-count">0</b> <span id="dl-word">Downloads</span></div>
     </div>
 
     <div class="stage">
@@ -449,6 +449,7 @@
         sum + (rel.assets || []).filter(a => /\.exe$/i.test(a.name)).reduce((s, a) => s + (a.download_count || 0), 0), 0);
       const el = document.getElementById("dl-count");
       const box = document.getElementById("downloads");
+      document.getElementById("dl-word").textContent = total === 1 ? "Download" : "Downloads";
       box.hidden = false;
       const start = performance.now();
       const step = (now) => {
