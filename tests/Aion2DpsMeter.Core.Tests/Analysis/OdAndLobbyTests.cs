@@ -22,6 +22,12 @@ public class OdAndLobbyTests
         Assert.Equal(new OdEnergy(15, 95), od);
         Assert.Equal(110, od.Total);
 
+        // Anderer Charakterstand: Login ohne Zusatz (Merkmal 04) und Einlösen +10 → 565 und 565 (+10).
+        Assert.Equal(new OdEnergy(565, 0), OdEnergyHypothesis.Parse(OdEnergyHypothesis.ListType,
+            Convert.FromHexString("008B969800008C9698000401879303B5040402879303020403879303080404")));
+        Assert.Equal(new OdEnergy(565, 10), OdEnergyHypothesis.Parse(OdEnergyHypothesis.UpdateType,
+            Convert.FromHexString("010C01879303B5040A010A000000")));
+
         // Andere Typen / andere 0C-61-Inhalte: nichts.
         Assert.Null(OdEnergyHypothesis.ParseBonus(0x0C61, Convert.FromHexString("00040A0000000E02")));
         Assert.Null(OdEnergyHypothesis.ParseBonus(0x0297, Convert.FromHexString("010C018793030F5F0128000000")));

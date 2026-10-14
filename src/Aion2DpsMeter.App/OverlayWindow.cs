@@ -767,7 +767,7 @@ public sealed class OverlayWindow : Window
             // Zusammengerechnet wie gewünscht: aufladender Wert + Zusatzwert; die Aufteilung steht im Tooltip.
             var german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
             _od.Opacity = 1;
-            _odText.Text = _settings.OdTotal
+            _odText.Text = _settings.OdTotal || odEnergy.Bonus == 0
                 ? odEnergy.Total.ToString("#,0", german)
                 : $"{odEnergy.Current.ToString("#,0", german)} (+{odEnergy.Bonus.ToString("#,0", german)})";
             _od.ToolTip = $"Od-Energie {odEnergy.Total.ToString("#,0", german)} = {odEnergy.Current.ToString("#,0", german)} (lädt alle 3 h auf) + {odEnergy.Bonus.ToString("#,0", german)} Zusatz";
