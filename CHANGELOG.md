@@ -1,6 +1,7 @@
 # Patchnotes
 
 ## Unveröffentlicht
+- Webseite: Bestenliste mit Top-DPS und schnellsten Kills pro Boss, Klassenvergleich, Klassen-Rangliste über alle Bosse und „Spieler der Woche“.
 - Neu (freiwillig): Bestenliste – beim ersten Start fragt AionMeta einmal, ob du deine Bosskämpfe teilen möchtest (mit Namen, anonym oder nein). Gesendet werden nur deine eigenen Werte: Boss, Dauer, Schaden, DPS, Klasse, Version – nie Werte oder Namen anderer Spieler. Jederzeit änderbar unter Einstellungen → Allgemein.
 
 ## 0.0.6 – 14.10.2026

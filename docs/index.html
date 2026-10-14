@@ -190,7 +190,14 @@
   .lb-tabs button { background: rgba(255,255,255,.04); color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font: 600 14px Inter, sans-serif; cursor: pointer; transition: all .15s; }
   .lb-tabs button:hover { color: var(--text); border-color: rgba(155,108,255,.4); }
   .lb-tabs button.on { color: #fff; background: rgba(155,108,255,.25); border-color: rgba(155,108,255,.6); }
-  .lb-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+  .lb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lb-week { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 16px 20px; border-radius: var(--radius);
+    background: linear-gradient(135deg, rgba(242,193,78,.16), rgba(155,108,255,.12)); border: 1px solid rgba(242,193,78,.4); }
+  .lb-week .crown { font-size: 30px; }
+  .lb-week small { display: block; color: var(--gold); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; }
+  .lb-week b { font-size: 20px; }
+  .lb-week span { color: var(--dim); }
+  .lb-week .lb-dps { margin-left: auto; font-size: 24px; }
   .lb-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
   .lb-title { font-weight: 700; margin-bottom: 10px; }
   .lb-row { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid rgba(255,255,255,.05); font-size: 14.5px; }
@@ -381,10 +388,13 @@
       <h2>Wer macht den meisten Schaden?</h2>
       <p class="sub">Live aus den Kämpfen aller, die das Teilen in AionMeta eingeschaltet haben – freiwillig, nur eigene Werte.</p>
       <div class="lb-totals" id="lb-totals"></div>
+      <div class="lb-week" id="lb-week" hidden></div>
       <div class="lb-tabs" id="lb-tabs"></div>
       <div class="lb-grid">
         <div class="lb-card"><div class="lb-title">Top-DPS</div><div id="lb-top"><div class="lb-empty">Wird geladen …</div></div></div>
-        <div class="lb-card"><div class="lb-title">Klassen im Vergleich</div><div id="lb-classes"></div></div>
+        <div class="lb-card"><div class="lb-title">Schnellste Kills</div><div id="lb-fast"></div></div>
+        <div class="lb-card"><div class="lb-title">Klassen bei diesem Boss</div><div id="lb-classes"></div></div>
+        <div class="lb-card"><div class="lb-title">Klassen-Rangliste (alle Bosse)</div><div id="lb-ranking"></div></div>
       </div>
     </div>
   </section>
@@ -534,6 +544,25 @@
     const top = document.getElementById("lb-top"), cls = document.getElementById("lb-classes"), tabs = document.getElementById("lb-tabs");
     try {
       const [totals, board, stats] = await Promise.all([get("totals?select=*"), get("leaderboard?select=*&order=dps.desc"), get("class_stats?select=*")]);
+      // Erweiterung 1 (falls in Supabase eingerichtet): schnellste Kills, Klassen-Rangliste, Spieler der Woche.
+      const optional = async (path) => { try { return await get(path); } catch { return null; } };
+      const [fast, ranking, week] = await Promise.all([optional("fastest_kills?select=*&order=duration_s.asc"), optional("class_ranking?select=*&order=avg_dps.desc"), optional("player_of_week?select=*")]);
+      if (week && week.length) {
+        const w = week[0];
+        const box = document.getElementById("lb-week");
+        box.innerHTML = `<span class="crown">👑</span><div><small>Spieler der Woche</small><b>${esc(w.player_name)}</b> <span>· ${esc(w.class)} · ${esc(w.boss)}</span></div><span class="lb-dps">${k(w.dps)} DPS</span>`;
+        box.hidden = false;
+      }
+      const rankEl = document.getElementById("lb-ranking");
+      if (ranking && ranking.length) {
+        const rmax = Math.max(...ranking.map(r => r.avg_dps), 1);
+        rankEl.innerHTML = ranking.map((r, i) => `<div class="lb-row" style="grid-template-columns:28px 1fr auto"><span class="lb-rank ${i === 0 ? "gold" : ""}">${i + 1}</span>
+          <span class="lb-name">${esc(r.class)}<small>${r.fights} Kämpfe · Bestwert ${k(r.best_dps)}</small><div class="lb-bar" style="width:${(r.avg_dps / rmax * 100).toFixed(0)}%"></div></span>
+          <span class="lb-dps">Ø ${k(r.avg_dps)}</span></div>`).join("");
+      } else {
+        rankEl.innerHTML = `<div class="lb-empty">Noch keine Daten.</div>`;
+      }
+      const fastEl = document.getElementById("lb-fast");
       const t = totals[0] || { fights: 0, bosses: 0 };
       document.getElementById("lb-totals").innerHTML =
         `<div><b>${Number(t.fights).toLocaleString("de-DE")}</b>geteilte Kämpfe</div><div><b>${t.bosses}</b>Bosse</div>`;
@@ -541,6 +570,7 @@
       if (bosses.length === 0) {
         top.innerHTML = `<div class="lb-empty">Noch keine Kämpfe geteilt – sei der Erste! Schalte in AionMeta unter Einstellungen → Allgemein „Bestenliste (Teilen)“ ein.</div>`;
         cls.innerHTML = `<div class="lb-empty">Sobald Kämpfe da sind, erscheint hier der Klassenvergleich.</div>`;
+        fastEl.innerHTML = `<div class="lb-empty">Noch keine Kills.</div>`;
         return;
       }
       const show = (boss) => {
@@ -548,6 +578,10 @@
         const rows = board.filter(b => b.boss === boss).slice(0, 10);
         top.innerHTML = rows.map((r, i) => `<div class="lb-row"><span class="lb-rank ${i === 0 ? "gold" : ""}">${i + 1}</span>
           <span class="lb-name">${esc(r.player_name)}<small>${esc(r.class)}</small></span><span class="lb-dps">${k(r.dps)}</span><span class="lb-time">${mm(r.duration_s)}</span></div>`).join("");
+        const kills = (fast || []).filter(f => f.boss === boss).slice(0, 10);
+        fastEl.innerHTML = kills.length ? kills.map((r, i) => `<div class="lb-row"><span class="lb-rank ${i === 0 ? "gold" : ""}">${i + 1}</span>
+          <span class="lb-name">${esc(r.player_name)}<small>${esc(r.class)} · ${k(r.dps)} DPS</small></span><span class="lb-dps">${mm(r.duration_s)}</span><span class="lb-time"></span></div>`).join("")
+          : `<div class="lb-empty">Noch keine Kills.</div>`;
         const cs = stats.filter(s => s.boss === boss).sort((a, b) => b.avg_dps - a.avg_dps);
         const max = Math.max(...cs.map(s => s.avg_dps), 1);
         cls.innerHTML = cs.map(s => `<div class="lb-row" style="grid-template-columns:1fr auto"><span class="lb-name">${esc(s.class)}<small>${s.fights} Kämpfe · Bestwert ${k(s.best_dps)}</small>
