@@ -305,6 +305,10 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
         }
     }
 
+    // Od-Werte vorher/nachher (Zusatzwert), per Umgebungsvariable AION2DPS_OD="vorher,nachher" änderbar.
+    private static long OdFrom => long.Parse((Environment.GetEnvironmentVariable("AION2DPS_OD") ?? "200,240").Split(',')[0]);
+    private static long OdTo => long.Parse((Environment.GetEnvironmentVariable("AION2DPS_OD") ?? "200,240").Split(',')[1]);
+
     /// <summary>
     /// Suche nach Od-Energie: Rahmen, in denen 840 (Maximum) zusammen mit 200 oder 240 (Zusatzwert) bzw. 15 vorkommt –
     /// als u16/u32/u64 (LE) oder Varint. Gibt Typ, Zeit und Bytes um die Fundstelle aus.
@@ -347,12 +351,12 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
             var b = frame.Body;
             var max = Find(b, 840);
             if (max.Count == 0) return;
-            var a = Find(b, 200);
-            var n = Find(b, 240);
+            var a = Find(b, OdFrom);
+            var n = Find(b, OdTo);
             if (a.Count == 0 && n.Count == 0) return;
             var at = Math.Abs(max[0]) - (max[0] < 0 ? 1 : 0);
             var from = Math.Max(0, at - 24);
-            output.WriteLine($"OD {frame.Type >> 8:X2} {frame.Type & 0xFF:X2} bei {(frame.Time - start.Value).TotalSeconds:0.0} s, {b.Length} B: 840@{string.Join(",", max)} 200@{string.Join(",", a)} 240@{string.Join(",", n)} 15@{string.Join(",", Find(b, 15).Take(6))}");
+            output.WriteLine($"OD {frame.Type >> 8:X2} {frame.Type & 0xFF:X2} bei {(frame.Time - start.Value).TotalSeconds:0.0} s, {b.Length} B: 840@{string.Join(",", max)} {OdFrom}@{string.Join(",", a)} {OdTo}@{string.Join(",", n)} 15@{string.Join(",", Find(b, 15).Take(6))}");
             output.WriteLine($"   {Convert.ToHexString(b, from, Math.Min(64, b.Length - from))}");
         });
         await new PcapFileSource().ReadRawAsync(path, analyzer.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
@@ -387,7 +391,7 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
         transitions.GetResult();
 
         // Weitere Kandidaten: Summe (215 → 255), skaliert (×10, ×100), als u32 LE oder Varint – ohne Kampfpakete (x 38).
-        var pairs = new (long From, long To)[] { (200, 240), (215, 255), (2000, 2400), (20000, 24000), (2150, 2550), (21500, 25500) };
+        var pairs = new (long From, long To)[] { (OdFrom, OdTo), (OdFrom + 15, OdTo + 15), (2000, 2400), (20000, 24000), (2150, 2550), (21500, 25500) };
         var last = new Dictionary<(ushort Type, int Offset, int Kind, long From), double>();
         DateTimeOffset? t1 = null;
         static byte[] Varint(long value)
@@ -462,6 +466,20 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
         });
         await new PcapFileSource().ReadRawAsync(path, od.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
         od.GetResult();
+
+        // Rahmen mit der Od-Kennung 51591 (Varint 87 93 03) – z. B. der Startwert beim Login.
+        var odId = new byte[] { 0x87, 0x93, 0x03 };
+        DateTimeOffset? t4 = null;
+        var withId = new RecordingAnalyzer(null, all, (_, frame) =>
+        {
+            t4 ??= frame.Time;
+            var at = frame.Body.AsSpan().IndexOf(odId);
+            if (at < 0) return;
+            var from = Math.Max(0, at - 12);
+            output.WriteLine($"ODID {frame.Type >> 8:X2} {frame.Type & 0xFF:X2} bei {(frame.Time - t4.Value).TotalSeconds:0.0} s, {frame.Body.Length} B @{at}: {Convert.ToHexString(frame.Body, from, Math.Min(40, frame.Body.Length - from))}");
+        });
+        await new PcapFileSource().ReadRawAsync(path, withId.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        withId.GetResult();
 
         foreach (var h in hits240.Where(h => typeCount[h.Type] <= 6))
         {
