@@ -1583,6 +1583,24 @@ Nur Optik; Funktionen und gespeicherte Einstellungen sind unverändert.
 | `dotnet publish` | `artifacts/endnutzer-win-x64-v42`, `artifacts/persoenlich-win-x64-v34` (PNG 193 / 202) |
 | Im Spiel | **nicht geprüft** |
 
+### Boss-Karte rot, Kampfkraft bei einem Gruppenmitglied (v43, Stand 14.10.2026, ~17:25)
+
+- Der Boss-Bereich (Name, Status/Kill/Berserk, HP-Leiste) sitzt in einer eigenen Karte: dunkler Hintergrund, abgerundet,
+  dünner roter Rahmen in fester Farbe. Inhalt unverändert.
+- Kampfkraft aus der Gruppenliste (02 97): In der Aufnahme 20261014-164636 (5er-Gruppe) fehlte sie bei einem
+  Mitglied. In dessen Kennung stand eine andere Server-Nummer (00 09) als im Feld nach dem Ausrüstungswert (05 09),
+  deshalb fand die Suche den Anker nicht.
+  - Neu: Fehlt der Anker, gilt direkt der Aufbau nach dem Ausrüstungswert (Server u16, u16, Byte, Kampfkraft u64).
+  - Ergebnis: Alle 5 Mitglieder haben jetzt eine Kampfkraft. Die Werte der anderen vier passen zum Overlay-Screenshot.
+  - Die Aufnahme 172129 liefert unverändert dieselben Werte.
+
+| Prüfung (~17:25) | Ergebnis |
+|---|---|
+| Voller `dotnet build` | **0 Warnungen, 0 Fehler** |
+| Tests | Core **352/352**, App **14/14**, Npcap **32/32** (mit beiden Aufnahmen) |
+| `dotnet publish` | `artifacts/endnutzer-win-x64-v43`, `artifacts/persoenlich-win-x64-v35` (PNG 193 / 202) |
+| Im Spiel | **nicht geprüft** |
+
 ## Bauen, testen, starten
 
 Alle Befehle im Ordner `Aion2DpsMeter` (dort, wo diese README liegt) ausführen:

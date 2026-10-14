@@ -68,6 +68,17 @@ public sealed class OverlayWindow : Window
     private readonly TextBlock _bossName = new() { FontWeight = FontWeights.Bold, TextTrimming = TextTrimming.CharacterEllipsis };
     private readonly TextBlock _bossValue = new() { Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold };
     private readonly StackPanel _bossCard = new();
+
+    // Eigene Karte für den Boss: dunkler Hintergrund, abgerundet, dünner roter Rahmen (feste Farbe, nicht das Farbthema).
+    private readonly Border _bossFrame = new()
+    {
+        Background = Frozen(Color.FromArgb(0xE6, 0x1A, 0x0C, 0x0E)),
+        BorderBrush = Frozen(Color.FromRgb(0xC8, 0x3C, 0x3C)),
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(8),
+        Padding = new Thickness(8, 2, 8, 8),
+        Margin = new Thickness(0, 4, 0, 4),
+    };
     private readonly TextBlock _bossStatus = new() { Foreground = DimBrush };
     private readonly TextBlock _bossHp = new() { Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold };
     private readonly TextBlock _bossTopHit = new() { HorizontalAlignment = HorizontalAlignment.Right, FontWeight = FontWeights.Bold, Foreground = Frozen(Color.FromRgb(0xF2, 0xC2, 0x6A)) };
@@ -274,8 +285,9 @@ public sealed class OverlayWindow : Window
         bossHead.Children.Add(nameBlock);
         _bossCard.Children.Add(bossHead);
         _bossCard.Children.Add(_bossBar);
-        DockPanel.SetDock(_bossCard, Dock.Top);
-        root.Children.Add(_bossCard);
+        _bossFrame.Child = _bossCard;
+        DockPanel.SetDock(_bossFrame, Dock.Top);
+        root.Children.Add(_bossFrame);
         DockPanel.SetDock(_endCard, Dock.Top);
         root.Children.Add(_endCard);
         root.Children.Add(_footer);
@@ -529,7 +541,7 @@ public sealed class OverlayWindow : Window
         // Nur bei Bossen (Dungeon-/Weltbosse): laut Gegnerliste „Boss“ (ohne Trainingspuppen), oder mit Zeitlimit vom Spiel.
         // Ohne Eintrag in der Liste gilt ein Gegner ab 5 Mio. Max-HP als Boss.
         if (boss is not null && !IsBoss(boss)) boss = null;
-        _bossCard.Visibility = boss is null ? Visibility.Collapsed : Visibility.Visible;
+        _bossFrame.Visibility = boss is null ? Visibility.Collapsed : Visibility.Visible;
         if (boss is null) return;
 
         _bossBar.Height = Math.Round(FontSize * 1.7);

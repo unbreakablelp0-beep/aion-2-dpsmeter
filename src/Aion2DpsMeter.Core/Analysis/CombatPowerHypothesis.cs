@@ -1,4 +1,4 @@
-using System.Buffers.Binary;
+﻿using System.Buffers.Binary;
 using System.Text;
 
 namespace Aion2DpsMeter.Core.Analysis;
@@ -68,6 +68,14 @@ public static class CombatPowerHypothesis
             return power is >= Min and <= Max
                 ? new PlayerPower(power, gear is >= 1 and <= 50_000 ? gear : 0)
                 : null;
+        }
+
+        // Manche Einträge (in der Aufnahme 20261014-164636 einer von fünf) tragen in der Kennung eine andere Server-
+        // Nummer als im Feld danach. Dann steht die Server-Nummer direkt nach dem Ausrüstungswert, die Kampfkraft 5 Bytes später.
+        if (o + 5 + 8 <= roster.Length)
+        {
+            var direct = BinaryPrimitives.ReadInt64LittleEndian(roster[(o + 5)..]);
+            if (direct is >= Min and <= Max) return new PlayerPower(direct, gear is >= 1 and <= 50_000 ? gear : 0);
         }
 
         return null;

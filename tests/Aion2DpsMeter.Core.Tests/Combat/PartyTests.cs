@@ -128,6 +128,22 @@ public class PartyTests
         return bytes.ToArray();
     }
 
+    /// <summary>
+    /// Wie der erste Eintrag in der Aufnahme 20261014-164636: Server-Nummer in der Kennung (00 09) passt nicht zum Feld
+    /// danach (05 09). Die Kampfkraft steht trotzdem 5 Bytes nach dem Ausrüstungswert (0x01AD7C = 109.948).
+    /// </summary>
+    [Fact]
+    public void ReadsCombatPowerWhenIdServerDiffers()
+    {
+        var name = Encoding.UTF8.GetBytes("Korvin");
+        var roster = new byte[30]
+            .Concat(Convert.FromHexString("03051C01C569030000000009"))
+            .Append((byte)name.Length).Concat(name)
+            .Concat(Convert.FromHexString("200000002D000000710900000509F210047CAD010000000000004000000000000000"))
+            .ToArray();
+        Assert.Equal(new PlayerPower(109_948, 2_417), CombatPowerHypothesis.FromRoster(roster, "Korvin"));
+    }
+
     [Fact]
     public void ReadsCombatPowerFromRosterAndSelfRecord()
     {

@@ -156,6 +156,29 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
                 output.WriteLine($"KP {Mask(a.Name!)} {a.ClassName}{(a.IsOwn ? " (ich)" : "")}: Kampfkraft {power?.CombatPower.ToString() ?? "–"}, GS {power?.GearScore.ToString() ?? "–"}");
             }
         }
+        // Je Gruppenliste und Spieler: Bytes vor und nach dem Namen (Namen selbst nicht ausgeben).
+        if (Environment.GetEnvironmentVariable("AION2DPS_DUMP_ROSTER") == "1")
+        {
+            foreach (var body in bodies)
+            {
+                output.WriteLine($"LISTE {body.Length} B");
+                foreach (var a in actors.Where(a => a.Name is not null))
+                {
+                    var nb = System.Text.Encoding.UTF8.GetBytes(a.Name!);
+                    var needle = new byte[nb.Length + 1];
+                    needle[0] = (byte)nb.Length;
+                    nb.CopyTo(needle, 1);
+                    var at = body.AsSpan().IndexOf(needle);
+                    if (at < 0) continue;
+                    var before = Convert.ToHexString(body, Math.Max(0, at - 12), Math.Min(12, at));
+                    var afterStart = at + needle.Length;
+                    var after = Convert.ToHexString(body, afterStart, Math.Min(48, body.Length - afterStart));
+                    var power = CombatPowerHypothesis.FromRoster(body, a.Name!);
+                    output.WriteLine($"  {Mask(a.Name!)} @{at}: vor {before} | nach {after} | KP {power?.CombatPower.ToString() ?? "–"}");
+                }
+            }
+        }
+
         foreach (var h in embeddedHits.Take(10))
         {
             output.WriteLine($"  bei {(h.Time - start!.Value).TotalSeconds:0.0} s in Typ {h.Type >> 8:X2} {h.Type & 0xFF:X2}: Größe {h.Size}, Namen {h.Names}");
