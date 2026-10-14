@@ -183,6 +183,26 @@
   .note-head { font-weight: 700; color: var(--violet-2); margin-bottom: 6px; }
   .note-head .new { font-size: 11px; font-weight: 800; color: #1b1406; background: var(--gold); border-radius: 6px; padding: 1px 7px; margin-left: 8px; vertical-align: 2px; }
   .note-card ul { margin: 0; padding-left: 20px; color: var(--dim); }
+  .lb-totals { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .lb-totals div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; color: var(--dim); font-size: 14px; }
+  .lb-totals b { display: block; font: 700 22px var(--num); color: var(--text); }
+  .lb-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .lb-tabs button { background: rgba(255,255,255,.04); color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font: 600 14px Inter, sans-serif; cursor: pointer; transition: all .15s; }
+  .lb-tabs button:hover { color: var(--text); border-color: rgba(155,108,255,.4); }
+  .lb-tabs button.on { color: #fff; background: rgba(155,108,255,.25); border-color: rgba(155,108,255,.6); }
+  .lb-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+  .lb-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+  .lb-title { font-weight: 700; margin-bottom: 10px; }
+  .lb-row { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid rgba(255,255,255,.05); font-size: 14.5px; }
+  .lb-row:first-child { border-top: 0; }
+  .lb-rank { font: 700 15px var(--num); color: var(--violet-2); text-align: center; }
+  .lb-rank.gold { color: var(--gold); }
+  .lb-name small { display: block; color: var(--dim); font-size: 12px; }
+  .lb-dps { font: 700 17px var(--num); }
+  .lb-time { color: var(--dim); font-size: 13px; min-width: 42px; text-align: right; }
+  .lb-bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--violet), var(--pink)); margin-top: 4px; }
+  .lb-empty { color: var(--dim); padding: 6px 0; }
+  @media (max-width: 920px) { .lb-grid { grid-template-columns: 1fr; } }
   .faq { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   details { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
   details[open] { border-color: rgba(155,108,255,.35); }
@@ -230,6 +250,7 @@
       <a href="#funktionen">Funktionen</a>
       <a href="#updates">Updates</a>
       <a href="#installation">Installation</a>
+      <a href="#bestenliste">Bestenliste</a>
       <a href="#patchnotes">Patchnotes</a>
       <a href="#fragen">Fragen</a>
       <a class="nav-dl dl-link" href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest">Download</a>
@@ -303,7 +324,7 @@
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3L2 6M19 3l3 3"/></svg></div><h3>Event-Alarme</h3><p>Erinnerung vor Events und Weltboss-Zeiten, mit Ton. Dazu Tastenkürzel und Tray-Symbol.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="rgba(201,178,255,.5)"/></svg></div><h3>Gut lesbar</h3><p>Kontraststufen, Farbthemen, Schriftgröße, Deckkraft und automatisches Ausblenden.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div><h3>Updates per Klick</h3><p>Neue Version? Ein Hinweis im Overlay, ein Klick – geprüft und installiert.</p></div>
-        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Rein passiv</h3><p>Kein Speicherzugriff, keine Injektion, keine Automatisierung. Deine Daten bleiben bei dir.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Rein passiv</h3><p>Kein Speicherzugriff, keine Injektion, keine Automatisierung. Gesendet wird nur, wenn du das Teilen für die Bestenliste einschaltest.</p></div>
       </div>
     </div>
   </section>
@@ -354,6 +375,20 @@
     </div>
   </section>
 
+  <section id="bestenliste">
+    <div class="wrap">
+      <div class="eyebrow">Bestenliste</div>
+      <h2>Wer macht den meisten Schaden?</h2>
+      <p class="sub">Live aus den Kämpfen aller, die das Teilen in AionMeta eingeschaltet haben – freiwillig, nur eigene Werte.</p>
+      <div class="lb-totals" id="lb-totals"></div>
+      <div class="lb-tabs" id="lb-tabs"></div>
+      <div class="lb-grid">
+        <div class="lb-card"><div class="lb-title">Top-DPS</div><div id="lb-top"><div class="lb-empty">Wird geladen …</div></div></div>
+        <div class="lb-card"><div class="lb-title">Klassen im Vergleich</div><div id="lb-classes"></div></div>
+      </div>
+    </div>
+  </section>
+
   <section id="fragen">
     <div class="wrap">
       <div class="eyebrow">Fragen</div>
@@ -364,7 +399,8 @@
         <details><summary>Ist das erlaubt?</summary><p>Der Meter ist inoffiziell und steht in keiner Verbindung zu NCSOFT. Die Nutzungsbedingungen untersagen nicht autorisierte Programme – Nutzung auf eigene Gefahr.</p></details>
         <details><summary>Wie bekomme ich Updates?</summary><p>Automatisch: Gibt es eine neue Version, erscheint oben im Overlay ein goldener Hinweis. Ein Klick lädt sie, prüft sie und startet neu.</p></details>
         <details><summary>Warum sehe ich bei Fremden keine Kampfkraft?</summary><p>Das Spiel schickt die Kampfkraft nur für dich und deine Gruppenmitglieder.</p></details>
-        <details><summary>Wo werden meine Daten gespeichert?</summary><p>Nur lokal unter <code>Dokumente\Aion2DpsMeter</code>. Nichts wird hochgeladen.</p></details>
+        <details><summary>Wo werden meine Daten gespeichert?</summary><p>Lokal unter <code>Dokumente\Aion2DpsMeter</code>. Hochgeladen wird nur, wenn du das Teilen für die Bestenliste einschaltest – und dann nur deine eigenen Bosskampf-Werte (Boss, Dauer, Schaden, DPS, Klasse, Version, auf Wunsch dein Name). Nie Werte oder Namen anderer Spieler, keine Aufnahmen, kein Chat.</p></details>
+        <details><summary>Wie komme ich in die Bestenliste?</summary><p>Beim ersten Start fragt AionMeta einmal, ob du teilen möchtest: mit Namen, anonym oder gar nicht. Ändern kannst du das jederzeit unter Einstellungen → Allgemein → „Bestenliste (Teilen)“. Standard ist „Aus“.</p></details>
         <details><summary>Was brauche ich?</summary><p>Windows 11 (64 Bit) und Npcap. Windows 10 sollte ebenfalls funktionieren.</p></details>
       </div>
     </div>
@@ -485,6 +521,44 @@
     };
     draw();
     setInterval(() => { const last = pts[pts.length - 1]; pts.shift(); pts.push(Math.max(8, Math.min(58, last + (Math.random() - 0.5) * 10))); draw(); }, 1500);
+  })();
+
+  // ---- Bestenliste (Supabase, nur lesend über die öffentlichen Ansichten; der Schlüssel darf öffentlich sein) ----
+  (async () => {
+    const base = "https://yclftixyshwhxeodkbvy.supabase.co/rest/v1/";
+    const key = "sb_publishable_O2MWhmfbcWbyZgNX2gnE8Q_Ouk6W0H-";
+    const get = async (path) => { const r = await fetch(base + path, { headers: { apikey: key } }); if (!r.ok) throw new Error(); return r.json(); };
+    const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[ch]));
+    const k = (v) => v >= 1e6 ? (v / 1e6).toLocaleString("de-DE", { maximumFractionDigits: 2 }) + "M" : v >= 1e3 ? (v / 1e3).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + "K" : String(v);
+    const mm = (s) => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    const top = document.getElementById("lb-top"), cls = document.getElementById("lb-classes"), tabs = document.getElementById("lb-tabs");
+    try {
+      const [totals, board, stats] = await Promise.all([get("totals?select=*"), get("leaderboard?select=*&order=dps.desc"), get("class_stats?select=*")]);
+      const t = totals[0] || { fights: 0, bosses: 0 };
+      document.getElementById("lb-totals").innerHTML =
+        `<div><b>${Number(t.fights).toLocaleString("de-DE")}</b>geteilte Kämpfe</div><div><b>${t.bosses}</b>Bosse</div>`;
+      const bosses = [...new Set(board.map(b => b.boss))];
+      if (bosses.length === 0) {
+        top.innerHTML = `<div class="lb-empty">Noch keine Kämpfe geteilt – sei der Erste! Schalte in AionMeta unter Einstellungen → Allgemein „Bestenliste (Teilen)“ ein.</div>`;
+        cls.innerHTML = `<div class="lb-empty">Sobald Kämpfe da sind, erscheint hier der Klassenvergleich.</div>`;
+        return;
+      }
+      const show = (boss) => {
+        tabs.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.boss === boss));
+        const rows = board.filter(b => b.boss === boss).slice(0, 10);
+        top.innerHTML = rows.map((r, i) => `<div class="lb-row"><span class="lb-rank ${i === 0 ? "gold" : ""}">${i + 1}</span>
+          <span class="lb-name">${esc(r.player_name)}<small>${esc(r.class)}</small></span><span class="lb-dps">${k(r.dps)}</span><span class="lb-time">${mm(r.duration_s)}</span></div>`).join("");
+        const cs = stats.filter(s => s.boss === boss).sort((a, b) => b.avg_dps - a.avg_dps);
+        const max = Math.max(...cs.map(s => s.avg_dps), 1);
+        cls.innerHTML = cs.map(s => `<div class="lb-row" style="grid-template-columns:1fr auto"><span class="lb-name">${esc(s.class)}<small>${s.fights} Kämpfe · Bestwert ${k(s.best_dps)}</small>
+          <div class="lb-bar" style="width:${(s.avg_dps / max * 100).toFixed(0)}%"></div></span><span class="lb-dps">Ø ${k(s.avg_dps)}</span></div>`).join("");
+      };
+      tabs.innerHTML = bosses.map(b => `<button data-boss="${esc(b)}">${esc(b)}</button>`).join("");
+      tabs.querySelectorAll("button").forEach(b => b.addEventListener("click", () => show(b.dataset.boss)));
+      show(bosses[0]);
+    } catch (e) {
+      top.innerHTML = `<div class="lb-empty">Die Bestenliste ist gerade nicht erreichbar.</div>`;
+    }
   })();
 
   // ---- Patchnotes aus CHANGELOG.md (dieselbe Quelle wie im Programm) ----

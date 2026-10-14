@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Aion2DpsMeter.Core.Combat;
@@ -11,7 +11,7 @@ namespace Aion2DpsMeter.Core.Combat;
 public static class StatsShareConfig
 {
     public const string Url = "https://yclftixyshwhxeodkbvy.supabase.co";
-    public const string AnonKey = "";
+    public const string AnonKey = "sb_publishable_O2MWhmfbcWbyZgNX2gnE8Q_Ouk6W0H-";
 
     public static bool Configured => AnonKey.Length > 0;
 
