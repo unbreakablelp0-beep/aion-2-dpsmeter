@@ -1,5 +1,9 @@
 # Patchnotes
 
+## 0.0.5 – 14.10.2026
+- Neu: Ping zum Spielserver unten im Overlay, grün/gelb/rot (Einstellungen → Anzeige → „Ping anzeigen“).
+- Der Ping wird nur passiv aus der Spielverbindung gemessen, es wird nichts gesendet.
+
 ## 0.0.4 – 14.10.2026
 - Neu: Nach einem Update zeigt AionMeta beim ersten Start, was sich geändert hat.
 - Die Patchnotes stehen auch im Release auf GitHub.

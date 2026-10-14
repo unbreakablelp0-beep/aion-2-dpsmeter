@@ -70,6 +70,12 @@ public sealed class LiveCombatDecoder
         _onDeath = onDeath;
     }
 
+    /// <summary>Ping zum Spielserver (passiv aus den TCP-Kopfzeilen der Spielverbindung).</summary>
+    public PingEstimator Ping { get; } = new();
+
+    // Spielserver: Absender des Stroms, in dem die Heartbeats bestätigt wurden.
+    private Endpoint? _server;
+
     /// <summary>Gemeldete Beschwörungen mit Besitzer.</summary>
     public long SummonCount { get; private set; }
 
@@ -87,6 +93,12 @@ public sealed class LiveCombatDecoder
     {
         ArgumentNullException.ThrowIfNull(packet);
         if (!PacketHeaderParser.TryParse(packet, out var parsed) || parsed?.Tcp is null) return;
+        if (_server is { } server)
+        {
+            if (parsed.Destination == server) Ping.Sent(parsed.Tcp.SequenceNumber, parsed.Payload.Length, parsed.Timestamp);
+            else if (parsed.Source == server && parsed.Tcp.Flags.HasFlag(TcpFlags.Ack)) Ping.Acknowledged(parsed.Tcp.AcknowledgmentNumber, parsed.Timestamp);
+        }
+
         foreach (var streamEvent in _reassembler.Add(parsed)) Route(streamEvent);
     }
 
@@ -103,6 +115,7 @@ public sealed class LiveCombatDecoder
         }
 
         check.Add(streamEvent);
+        if (check.HeartbeatsSeen >= MinimumHeartbeats && _server != streamEvent.Stream.Source) _server = streamEvent.Stream.Source;
 
         // Sperre inzwischen offen (z. B. nur Heartbeats nachgekommen)? Dann Zurückgehaltenes jetzt auswerten.
         if (check.HeartbeatsSeen >= MinimumHeartbeats && _pending.Remove(check, out var waiting))

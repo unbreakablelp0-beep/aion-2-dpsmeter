@@ -1,9 +1,9 @@
 <Project>
   <!-- Eine Versionsnummer für alle Projekte (SemVer). Bei jedem Release erhöhen; der Release-Tag ist „v“ + diese Nummer. -->
   <PropertyGroup>
-    <Version>0.0.4</Version>
-    <FileVersion>0.0.4.0</FileVersion>
-    <AssemblyVersion>0.0.4.0</AssemblyVersion>
+    <Version>0.0.5</Version>
+    <FileVersion>0.0.5.0</FileVersion>
+    <AssemblyVersion>0.0.5.0</AssemblyVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 </Project>

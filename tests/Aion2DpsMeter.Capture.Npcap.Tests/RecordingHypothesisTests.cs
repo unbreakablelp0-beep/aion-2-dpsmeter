@@ -305,6 +305,35 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
         }
     }
 
+    /// <summary>Ping passiv aus der Aufnahme (TCP-Sequenz/ACK der Spielverbindung): Verlauf in 10-s-Schritten.</summary>
+    [Fact]
+    public async Task MeasuresPingPassively()
+    {
+        var path = Environment.GetEnvironmentVariable(PathVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            output.WriteLine($"Nicht ausgeführt: {PathVariable} ist nicht gesetzt.");
+            return;
+        }
+
+        var decoder = new LiveCombatDecoder(_ => { });
+        DateTimeOffset? start = null, next = null;
+        var values = new List<double>();
+        await new PcapFileSource().ReadRawAsync(path, raw =>
+        {
+            decoder.Add(raw);
+            start ??= raw.Timestamp;
+            next ??= raw.Timestamp.AddSeconds(10);
+            if (raw.Timestamp < next) return;
+            next = raw.Timestamp.AddSeconds(10);
+            if (decoder.Ping.Current(raw.Timestamp) is { } ping)
+            {
+                values.Add(ping.TotalMilliseconds);
+                output.WriteLine($"PING {(raw.Timestamp - start.Value).TotalSeconds:0} s: {ping.TotalMilliseconds:0} ms");
+            }
+        }, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+        output.WriteLine($"PING Messpunkte: {values.Count}, min {(values.Count > 0 ? values.Min() : 0):0} ms, max {(values.Count > 0 ? values.Max() : 0):0} ms");
+    }
     /// <summary>Inventar aller Nachrichtentypen (Server → Client): Anzahl, Größen. Nur gezählt, nicht gedeutet.</summary>
     [Fact]
     public async Task ListsAllMessageTypesInOwnRecording()

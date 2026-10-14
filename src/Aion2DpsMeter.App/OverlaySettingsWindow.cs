@@ -110,6 +110,8 @@ public sealed class OverlaySettingsWindow : Window
             Setting("Gruppenhinweis anzeigen", Toggle(() => _get().ShowPartyHint, v => Change(s => s with { ShowPartyHint = v })),
                 "Zeigt „Gruppe 2/5 erkannt“, wenn das Spiel eine größere Gruppe meldet, als Namen bekannt sind – nur im Kampf und bis " +
                 "60 s danach. Fehlende Namen kommen beim Teleport bzw. wenn die Mitglieder ins Blickfeld kommen."),
+            Setting("Ping anzeigen", Toggle(() => _get().ShowPing, v => Change(s => s with { ShowPing = v })),
+                "Ping zum Spielserver unten in der Fußzeile, grün/gelb/rot. Rein passiv aus der Spielverbindung gemessen – es wird nichts gesendet."),
             Setting("Automatisch ausblenden", AutoHideChoice(),
                 "Blendet das Overlay aus, wenn so lange kein Kampf war (Standard aus). Es kommt beim nächsten Treffer von dir bzw. " +
                 "deiner Gruppe oder bei einem Alarm von selbst wieder. Tastenkürzel und Tray-Symbol funktionieren weiter."),

@@ -125,6 +125,12 @@ public sealed class OverlayWindow : Window
     private readonly DockPanel _footer = new() { LastChildFill = true };
     private readonly StackPanel _ownInfo = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _lockIcon = new();
+
+    // Ping zum Spielserver (passiv gemessen): Signalbalken + „12 ms“, grün/gelb/rot.
+    private readonly StackPanel _ping = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), ToolTip = "Ping zum Spielserver (passiv aus der Spielverbindung gemessen)" };
+    private readonly Rectangle[] _pingBars = [new(), new(), new()];
+    private readonly TextBlock _pingText = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
+    private Func<TimeSpan?>? _pingValue;
     private readonly Dictionary<uint, RowView> _rows = new();
     private OverlaySettings _settings;
     private bool _compact;
@@ -157,8 +163,10 @@ public sealed class OverlayWindow : Window
         Func<DateTimeOffset?, double?> bestOwnDps,
         Func<int?, NpcInfo?> npcInfo,
         Func<string?>? update = null,
-        Action? applyUpdate = null)
+        Action? applyUpdate = null,
+        Func<TimeSpan?>? ping = null)
     {
+        _pingValue = ping;
         _npcInfo = npcInfo;
         _update = update;
         _applyUpdate = applyUpdate;
@@ -269,6 +277,22 @@ public sealed class OverlayWindow : Window
         // Deckkraft nur in den Einstellungen (Anzeige) – die Fußzeile bleibt schlicht.
         DockPanel.SetDock(_lockIcon, Dock.Right);
         _footer.Children.Add(_lockIcon);
+        for (var i = 0; i < _pingBars.Length; i++)
+        {
+            _pingBars[i].Width = 3;
+            _pingBars[i].Height = 4 + i * 3;
+            _pingBars[i].RadiusX = 1;
+            _pingBars[i].RadiusY = 1;
+            _pingBars[i].Margin = new Thickness(i == 0 ? 0 : 1.5, 0, 0, 0);
+            _pingBars[i].VerticalAlignment = VerticalAlignment.Bottom;
+        }
+
+        var bars = new StackPanel { Orientation = Orientation.Horizontal, Height = 10, VerticalAlignment = VerticalAlignment.Center };
+        foreach (var bar in _pingBars) bars.Children.Add(bar);
+        _ping.Children.Add(bars);
+        _ping.Children.Add(_pingText);
+        DockPanel.SetDock(_ping, Dock.Right);
+        _footer.Children.Add(_ping);
         _footer.Children.Add(_ownInfo);
 
         var root = new DockPanel { Margin = new Thickness(10, 8, 10, 6) };
@@ -704,8 +728,28 @@ public sealed class OverlayWindow : Window
         if (!moving) StopAnimation();
     }
 
+    private static readonly Brush[] PingBrushes = [Frozen(Color.FromRgb(0x4C, 0xD9, 0x64)), Frozen(Color.FromRgb(0xF2, 0xC1, 0x4E)), Frozen(Color.FromRgb(0xE8, 0x4C, 0x4C))];
+    private static readonly Brush PingOff = Frozen(Color.FromArgb(0x50, 0xFF, 0xFF, 0xFF));
+
+    /// <summary>Ping-Anzeige: Balken und Zahl in Grün (gut), Gelb (mittel) oder Rot (schlecht); ohne Messung ausgeblendet.</summary>
+    private void UpdatePing()
+    {
+        if (!_settings.ShowPing || _pingValue?.Invoke() is not { } ping)
+        {
+            _ping.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var level = Aion2DpsMeter.Core.Analysis.PingEstimator.Level(ping);
+        _ping.Visibility = Visibility.Visible;
+        _pingText.Text = $"{Math.Max(1, Math.Round(ping.TotalMilliseconds)):0} ms";
+        _pingText.Foreground = PingBrushes[level];
+        _pingText.FontSize = Math.Max(9, FontSize - 2);
+        for (var i = 0; i < _pingBars.Length; i++) _pingBars[i].Fill = i < 3 - level ? PingBrushes[level] : PingOff;
+    }
     private void UpdateFooter(LiveCombatSnapshot snapshot)
     {
+        UpdatePing();
         _lockIcon.Text = _settings.ClickThrough ? "🔒" : "🔓";
         _lockIcon.ToolTip = _settings.ClickThrough
             ? "Klicks gehen ans Spiel – ausschalten mit Strg+Umschalt+K oder Doppelklick aufs Tray-Symbol"

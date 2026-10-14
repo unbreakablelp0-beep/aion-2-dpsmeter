@@ -770,7 +770,8 @@ public partial class MainWindow : Window
             bestOwnDps: BestOwnDps,
             npcInfo: code => _npcNames.Lookup(code),
             update: UpdateLine,
-            applyUpdate: StartUpdate);
+            applyUpdate: StartUpdate,
+            ping: () => _liveDecoder?.Ping.Current(DateTimeOffset.UtcNow));
         _overlay.Closed += (_, _) => OverlayButton.Content = "Overlay ein";
         _overlay.Show();
         OverlayButton.Content = "Overlay aus";
