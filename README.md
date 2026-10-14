@@ -36,10 +36,6 @@ Viele Paketfelder sind **Hypothesen**, die an eigenen Aufnahmen geprüft wurden.
 
 ## Was nicht enthalten ist
 
-- **Keine Spielgrafiken** (Klassen- oder Kampfkraft-Symbole von NCSOFT). Das Overlay zeichnet eigene Vektorsymbole.
-  - `publish-persoenlich.ps1` baut eine private Variante mit **eigenen**, lokal abgelegten Bildern aus
-    `Dokumente\Aion2DpsMeter\Icons`.
-  - Diese Bilder sind nicht im Repository. Die damit gebaute EXE ist nicht zum Weitergeben gedacht.
 - **Keine Aufnahmen** (`.pcap`), keine Kampfdaten und keine Spielernamen.
 - **Keine Community-Namenslisten** (Fähigkeiten, Gegner).
   - Liegen solche Listen lokal unter `Dokumente\Aion2DpsMeter`, nutzt das Programm sie (`skills-community.json`,
@@ -103,7 +99,7 @@ An **unofficial**, overlay DPS meter for **AION 2 Global / EU**, written in C# w
   - Boss HP bar, kill-time estimate and berserk countdown.
   - Player detail window with a DPS chart.
   - Fight history, weekly stats, event alarms and contrast levels.
-- **Not included:** no NCSOFT artwork, no packet recordings, no player names and no community name lists.
+- **Not included:** no packet recordings, no player names and no community name lists.
 - **Disclaimer:** not affiliated with NCSOFT. Third-party tools may violate the game's terms of service, so use it at
   your own risk.
 - **Build:** `dotnet build Aion2DpsMeter.slnx -c Release` (needs the .NET 10 SDK, plus Npcap to capture).
