@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Threading;
 
 namespace Aion2DpsMeter.App;
@@ -50,10 +50,10 @@ public partial class App : Application
         var root = exception is System.Windows.Markup.XamlParseException { InnerException: { } inner } ? inner : exception;
 
         MessageBox.Show(
-            "Das AION 2 DPS Meter wurde wegen eines Fehlers beendet.\n\n" +
+            "AionMeta wurde wegen eines Fehlers beendet.\n\n" +
             $"{root.Message}\n\n" +
             (path is null ? "Die Logdatei konnte nicht geschrieben werden." : $"Details: {path}"),
-            "AION 2 DPS Meter – Fehler",
+            "AionMeta – Fehler",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
     }

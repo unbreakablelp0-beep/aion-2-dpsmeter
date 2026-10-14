@@ -232,10 +232,10 @@ public class PlayerDetailTests
         var content = OverlayFormat.Build(meter.Snapshot(T0.AddSeconds(9)), 8);
         var text = OverlayFormat.ToClipboardText(content);
 
-        Assert.Contains("AION 2 DPS – Kampf 0:09", text);
+        Assert.Contains("AionMeta – Kampf 0:09", text);
         Assert.Contains("1. Lyra (Bogenschütze): 93,0K", text);
         Assert.Equal(1u, content.Rows[0].Actor);
         Assert.Equal("100,0 %", content.Rows[0].Share);
-        Assert.Equal("AION 2 DPS – noch keine Treffer", OverlayFormat.ToClipboardText(OverlayFormat.Build(new LiveCombatMeter().Snapshot(T0), 8)));
+        Assert.Equal("AionMeta – noch keine Treffer", OverlayFormat.ToClipboardText(OverlayFormat.Build(new LiveCombatMeter().Snapshot(T0), 8)));
     }
 }

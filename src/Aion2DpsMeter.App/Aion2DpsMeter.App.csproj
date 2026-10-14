@@ -7,6 +7,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <!-- Programmname (EXE): AionMeta. Namensraum und Projektname bleiben. -->
+    <AssemblyName>AionMeta</AssemblyName>
+    <Product>AionMeta</Product>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

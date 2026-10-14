@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using Forms = System.Windows.Forms;
@@ -30,7 +30,7 @@ public sealed class TrayIcon : IDisposable
         _icon = new Forms.NotifyIcon
         {
             Icon = _image,
-            Text = "Aion2 DPS-Meter – Doppelklick: Klicks durchlassen aus",
+            Text = "AionMeta – Doppelklick: Klicks durchlassen aus",
             ContextMenuStrip = menu,
             Visible = true,
         };

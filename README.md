@@ -1,4 +1,4 @@
-﻿# AION 2 DPS Meter (inoffiziell)
+﻿# AionMeta – DPS-Meter für AION 2 (inoffiziell)
 
 Ein Overlay-DPS-Meter für **AION 2 Global / EU** – C#, .NET 10, WPF, Windows 11 x64.
 
@@ -88,7 +88,7 @@ Es wurde nur gelesen, **kein Code übernommen**; jede betroffene Klasse nennt di
 
 ## English (short)
 
-An **unofficial**, overlay DPS meter for **AION 2 Global / EU**, written in C# with .NET 10 and WPF for Windows 11 x64.
+**AionMeta** is an **unofficial** overlay DPS meter for **AION 2 Global / EU**, written in C# with .NET 10 and WPF for Windows 11 x64.
 
 - **Passive only:** it reads the game's network packets with Npcap.
   - No memory reading and no injection.

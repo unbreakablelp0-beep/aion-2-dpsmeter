@@ -109,7 +109,7 @@ public sealed class OverlayWindow : Window
     // Zahlenschrift – vorher saß die Zeit sichtbar höher als „Kampf“.
     private readonly Run _title = new() { FontWeight = FontWeights.SemiBold };
     private readonly Run _elapsed = new();
-    private readonly TextBlock _headerText = new() { VerticalAlignment = VerticalAlignment.Center, ToolTip = $"AION 2 DPS Meter {Aion2DpsMeter.Core.Updates.AppRelease.Current}" };
+    private readonly TextBlock _headerText = new() { VerticalAlignment = VerticalAlignment.Center, ToolTip = $"AionMeta {Aion2DpsMeter.Core.Updates.AppRelease.Current}" };
     private readonly TextBlock _modeButton;
     private readonly Grid _rowsHost = new() { ClipToBounds = true, VerticalAlignment = VerticalAlignment.Top };
     private readonly TextBlock _emptyText = new()
@@ -173,7 +173,7 @@ public sealed class OverlayWindow : Window
         _settings = settings.Normalized();
         ThemeColors.Set(_settings.Theme);
 
-        Title = "DPS-Overlay";
+        Title = "AionMeta";
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;

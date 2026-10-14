@@ -3,201 +3,406 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AION 2 DPS Meter</title>
-<meta name="description" content="Inoffizielles, rein passives DPS-Meter-Overlay für AION 2 (EU): DPS je Spieler, Boss-HP, Berserk-Timer, Gruppe, Kampfverlauf. Kostenlos, Open Source.">
+<title>AionMeta – DPS-Meter für AION 2</title>
+<meta name="description" content="Inoffizielles, rein passives DPS-Overlay für AION 2 (EU): DPS je Spieler, Boss-HP, Berserk-Timer, Kampfkraft, Tode, Kampfverlauf und Updates per Klick.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0f14;
-    --panel: #151821;
-    --panel-2: #1b1f2a;
-    --line: #2a2f3d;
-    --text: #e9ecf2;
-    --dim: #a9b0be;
-    --accent: #9b6cff;
-    --accent-2: #c3a6ff;
-    --red: #d24a4a;
+    --bg: #07080c;
+    --bg-2: #0e1018;
+    --panel: rgba(22, 25, 34, .72);
+    --line: rgba(255, 255, 255, .08);
+    --text: #eef0f5;
+    --dim: #a3aaba;
+    --violet: #9b6cff;
+    --violet-2: #c9b2ff;
+    --pink: #ff7eb3;
+    --teal: #5fe0c8;
     --gold: #f2c14e;
-    --green: #5ea04e;
-    --radius: 14px;
+    --red: #e04848;
+    --radius: 18px;
+    --num: "Bahnschrift SemiBold Condensed", "Barlow Semi Condensed", "Bahnschrift", sans-serif;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
     margin: 0;
-    background: radial-gradient(1200px 600px at 70% -10%, #2a1f4a 0%, transparent 60%), var(--bg);
+    background: var(--bg);
     color: var(--text);
-    font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    font: 16px/1.65 Inter, "Segoe UI", system-ui, sans-serif;
+    overflow-x: hidden;
   }
-  a { color: var(--accent-2); }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+  a { color: var(--violet-2); }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 16px; }
 
-  header.top { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .3px; }
-  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 10px #3ddc84; }
-  nav a { color: var(--dim); text-decoration: none; margin-left: 18px; font-size: 15px; }
+  /* Hintergrund: weiche Lichtflecken */
+  .glow { position: fixed; inset: 0; pointer-events: none; z-index: -1;
+    background:
+      radial-gradient(700px 420px at 85% 8%, rgba(155,108,255,.22), transparent 70%),
+      radial-gradient(600px 400px at 5% 30%, rgba(255,126,179,.10), transparent 70%),
+      radial-gradient(800px 500px at 50% 110%, rgba(95,224,200,.08), transparent 70%); }
+
+  /* Navigation */
+  header.top { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(14px); background: rgba(7,8,12,.6); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .2px; }
+  .brand .logo { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(135deg, var(--violet), var(--pink)); box-shadow: 0 4px 18px rgba(155,108,255,.45); }
+  nav { display: flex; align-items: center; gap: 22px; }
+  nav a { color: var(--dim); text-decoration: none; font-size: 15px; font-weight: 500; }
   nav a:hover { color: var(--text); }
+  nav a.nav-dl { color: #fff; background: rgba(155,108,255,.18); border: 1px solid rgba(155,108,255,.45); padding: 7px 14px; border-radius: 10px; }
 
-  .hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; padding: 40px 0 60px; }
-  .hero h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.1; margin: 0 0 14px; }
-  .hero h1 span { background: linear-gradient(90deg, var(--accent-2), #ff8fb1); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .hero p.lead { color: var(--dim); font-size: 18px; margin: 0 0 26px; }
-  .badge { display: inline-block; font-size: 13px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; margin-bottom: 18px; }
-  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 12px; font-weight: 600; text-decoration: none; border: 1px solid transparent; }
-  .btn.primary { background: linear-gradient(180deg, #a67dff, #7b4ee6); color: #fff; box-shadow: 0 6px 24px rgba(155,108,255,.35); }
-  .btn.primary:hover { filter: brightness(1.08); }
-  .btn.ghost { border-color: var(--line); color: var(--text); background: rgba(255,255,255,.03); }
-  .version { color: var(--dim); font-size: 14px; margin-top: 12px; }
+  /* Hero */
+  .hero { display: grid; grid-template-columns: 1fr 1.05fr; gap: 48px; align-items: center; padding: 72px 0 90px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--violet-2); background: rgba(155,108,255,.12); border: 1px solid rgba(155,108,255,.3); border-radius: 999px; padding: 5px 13px; margin-bottom: 22px; }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 8px #3ddc84; }
+  .hero h1 { font-size: clamp(36px, 5.4vw, 62px); line-height: 1.04; letter-spacing: -1.5px; margin: 0 0 20px; font-weight: 800; }
+  .hero h1 .grad { background: linear-gradient(90deg, var(--violet-2), var(--pink) 60%, #ffb36b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.lead { color: var(--dim); font-size: 18.5px; margin: 0 0 32px; max-width: 540px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 24px; border-radius: 14px; font-weight: 700; text-decoration: none; border: 1px solid transparent; transition: transform .15s, filter .15s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.primary { background: linear-gradient(180deg, #ad86ff, #7a4be8); color: #fff; box-shadow: 0 10px 34px rgba(155,108,255,.45), inset 0 1px 0 rgba(255,255,255,.3); }
+  .btn.ghost { border-color: var(--line); color: var(--text); background: rgba(255,255,255,.04); }
+  .meta { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 22px; color: var(--dim); font-size: 14px; }
+  .meta span::before { content: "✓ "; color: var(--teal); font-weight: 700; }
 
-  /* Overlay-Vorschau (nur HTML/CSS, erfundene Namen) */
-  .overlay { background: rgba(18,20,26,.92); border: 1px solid rgba(155,108,255,.45); border-radius: 12px; padding: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.5); font-size: 13px; }
-  .ov-head { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 4px 8px; }
-  .ov-head b { font-weight: 600; }
-  .ov-head .t { color: var(--dim); margin-left: 8px; font-variant-numeric: tabular-nums; }
-  .ov-head .icons { color: var(--dim); letter-spacing: 6px; }
-  .boss { margin: 8px 0; background: rgba(26,12,14,.9); border: 1px solid #c83c3c; border-radius: 8px; padding: 6px 8px 8px; }
-  .boss .name { font-weight: 700; font-size: 15px; }
-  .boss .status { color: var(--dim); font-size: 12px; }
-  .boss .status .bz { color: #ff9b6b; }
-  .hp { position: relative; height: 18px; margin-top: 6px; border-radius: 4px; background: rgba(90,22,22,.55); border: 1px solid rgba(184,58,58,.6); overflow: hidden; }
-  .hp i { position: absolute; inset: 0 auto 0 0; width: 37%; background: linear-gradient(180deg, #e25555, #a82c2c); }
-  .hp span { position: relative; display: flex; justify-content: space-between; padding: 0 6px; font-size: 11px; font-weight: 700; line-height: 18px; }
-  .row { position: relative; height: 26px; margin-top: 4px; border-radius: 4px; background: rgba(0,0,0,.25); overflow: hidden; }
-  .row i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
-  .row div { position: relative; display: flex; align-items: center; gap: 8px; height: 100%; padding: 0 8px; }
-  .row .n { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row .cp { color: #b8e6dc; font-size: 11px; font-weight: 400; margin-left: 6px; }
-  .row .me { background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 0 4px; border-radius: 3px; margin-left: 6px; }
-  .row .d { font-weight: 700; font-variant-numeric: tabular-nums; }
-  .row .s { color: var(--dim); width: 54px; text-align: right; font-variant-numeric: tabular-nums; }
-  .ci { width: 18px; height: 18px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); }
+  /* Bühne mit „Spiel“-Hintergrund und dem Overlay */
+  .stage { position: relative; border-radius: 22px; padding: 34px 26px; overflow: hidden; border: 1px solid var(--line);
+    background:
+      radial-gradient(260px 200px at 20% 80%, rgba(170,30,40,.55), transparent 70%),
+      radial-gradient(300px 220px at 85% 20%, rgba(150,40,30,.45), transparent 70%),
+      radial-gradient(400px 300px at 50% 50%, rgba(40,60,40,.6), transparent 80%),
+      linear-gradient(160deg, #1d1612, #120d10 60%, #0b0a0d);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  .stage::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.015) 0 2px, transparent 2px 9px); pointer-events: none; }
+  .stage .tag { position: absolute; right: 14px; bottom: 10px; font-size: 11px; color: rgba(255,255,255,.35); z-index: 2; }
 
-  section { padding: 56px 0; border-top: 1px solid rgba(255,255,255,.05); }
-  section h2 { font-size: 30px; margin: 0 0 8px; }
-  section p.sub { color: var(--dim); margin: 0 0 28px; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
-  .card h3 { margin: 0 0 6px; font-size: 18px; }
-  .card p { margin: 0; color: var(--dim); font-size: 15px; }
-  .card .ico { font-size: 24px; margin-bottom: 8px; }
+  /* ===== Overlay – Nachbau des echten Meters ===== */
+  .ov { position: relative; z-index: 1; max-width: 430px; margin: 0 auto; background: rgba(18,20,26,.86); border: 1px solid rgba(155,108,255,.5); border-radius: 12px; padding: 8px 10px 6px; font: 13px/1.3 "Segoe UI", Inter, sans-serif; color: #f2f4f8; box-shadow: 0 2px 14px rgba(0,0,0,.55); text-shadow: 0 1px 2px rgba(0,0,0,.9); }
+  .ov-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 4px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.02)); }
+  .ov-head .l { display: flex; align-items: baseline; gap: 8px; }
+  .ov-dot { width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 8px #3ddc84; align-self: center; animation: pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity: .45; } }
+  .ov-head b { font-weight: 600; font-size: 14px; }
+  .ov-head .t { font-family: var(--num); color: #c8cdd6; font-size: 14px; }
+  .ov-head .btns { display: flex; gap: 7px; color: #c8cdd6; font-size: 13px; }
+  .ov-line { color: #c8cdd6; font-size: 12px; margin: 4px 2px 2px; }
+  .ov-boss { margin: 6px 0 4px; background: rgba(26,12,14,.92); border: 1px solid #c83c3c; border-radius: 8px; padding: 4px 8px 8px; }
+  .ov-boss .bn { font-weight: 700; font-size: 16px; }
+  .ov-boss .bs { color: #c8cdd6; font-size: 11.5px; }
+  .ov-boss .bs .bz { color: #ff9b6b; }
+  .ov-hp { position: relative; height: 18px; margin-top: 5px; border-radius: 3px; background: rgba(90,22,22,.4); border: 1px solid rgba(184,58,58,.6); overflow: hidden; }
+  .ov-hp .trail { position: absolute; inset: 0 auto 0 0; background: rgba(255,170,170,.35); transition: width 1.2s ease-out; }
+  .ov-hp .fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg, #e45a5a, #a92b2b); transition: width .35s; }
+  .ov-hp .txt { position: relative; display: flex; justify-content: space-between; padding: 0 6px; font: 700 11px/18px var(--num); letter-spacing: .3px; }
+  .rows { position: relative; }
+  .r { position: relative; height: 26px; margin-top: 4px; border-radius: 4px; background: rgba(0,0,0,.19); overflow: hidden; }
+  .r .bar { position: absolute; inset: 0 auto 0 0; border-radius: 4px; transition: width .5s ease-out; }
+  .r .bar::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%; background: linear-gradient(180deg, rgba(255,255,255,.19), transparent); border-radius: 4px 4px 0 0; }
+  .r.own { box-shadow: inset 0 0 0 1px rgba(170,255,170,.55); }
+  .r .c { position: relative; display: flex; align-items: center; height: 100%; padding: 0 6px 0 4px; }
+  .ico { width: 19px; height: 19px; flex: none; }
+  .r .n { font-weight: 600; margin-left: 6px; white-space: nowrap; color: #f0f2f6; }
+  .badge { background: #e2a93b; color: #1b1406; font-size: 9.5px; font-weight: 800; padding: 0 4px; border-radius: 3px; margin-left: 6px; text-shadow: none; }
+  .cp { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; color: #b8e6dc; font-size: 11px; }
+  .cp svg { width: 12px; height: 12px; }
+  .dead { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; color: #f09a9a; font-size: 11px; font-weight: 600; }
+  .r .sp { flex: 1; }
+  .r .d { font: 700 15px var(--num); min-width: 62px; text-align: right; }
+  .r .m, .r .s { color: #c8cdd6; font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+  .r .m { min-width: 48px; }
+  .r .s { min-width: 50px; }
+  .ov-foot { display: flex; align-items: center; justify-content: space-between; margin: 6px 2px 0; color: #f0f2f6; font-size: 13px; }
+  .ov-foot .me { display: flex; align-items: center; gap: 6px; }
+  .ov-foot .lock { color: #c8cdd6; font-size: 12px; }
+  .ov-update { color: var(--gold); font-weight: 600; font-size: 12px; margin: 3px 2px 0; }
 
-  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-  ol.steps li { counter-increment: s; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 16px 16px 60px; position: relative; }
-  ol.steps li::before { content: counter(s); position: absolute; left: 16px; top: 14px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: rgba(155,108,255,.2); color: var(--accent-2); }
-  ol.steps li b { display: block; }
-  ol.steps li span { color: var(--dim); font-size: 15px; }
+  /* Abschnitte */
+  section { padding: 90px 0; }
+  .eyebrow { color: var(--violet-2); font-size: 13px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 10px; }
+  section h2 { font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -.8px; line-height: 1.15; margin: 0 0 12px; }
+  section p.sub { color: var(--dim); font-size: 17px; margin: 0 0 40px; max-width: 640px; }
 
-  details { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 10px; }
-  summary { cursor: pointer; font-weight: 600; }
-  details p { color: var(--dim); margin: 10px 0 0; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .f { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; transition: border-color .2s, transform .2s; }
+  .f:hover { border-color: rgba(155,108,255,.4); transform: translateY(-3px); }
+  .f .fi { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 14px; background: linear-gradient(135deg, rgba(155,108,255,.25), rgba(255,126,179,.12)); border: 1px solid rgba(155,108,255,.3); }
+  .f .fi svg { width: 22px; height: 22px; stroke: var(--violet-2); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .f h3 { margin: 0 0 6px; font-size: 18px; }
+  .f p { margin: 0; color: var(--dim); font-size: 15px; }
 
-  .note { background: rgba(242,193,78,.08); border: 1px solid rgba(242,193,78,.35); border-radius: var(--radius); padding: 16px 18px; color: #f3dfa8; }
-  footer { padding: 30px 0 50px; color: var(--dim); font-size: 14px; border-top: 1px solid rgba(255,255,255,.05); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .checks li { display: flex; gap: 12px; }
+  .checks li::before { content: ""; flex: none; width: 22px; height: 22px; margin-top: 2px; border-radius: 50%; background: rgba(95,224,200,.15) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235fe0c8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12l4 4 8-8'/%3E%3C/svg%3E") center/14px no-repeat; border: 1px solid rgba(95,224,200,.35); }
+  .checks b { display: block; }
+  .checks span { color: var(--dim); font-size: 15px; }
+  .update-demo { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; }
+  .update-demo .ov { max-width: none; }
 
-  @media (max-width: 860px) {
-    .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 20px; }
-    .grid { grid-template-columns: 1fr; }
-    nav { display: none; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: s; }
+  .step { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 20px 20px; counter-increment: s; }
+  .step::before { content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; margin-bottom: 14px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--violet), var(--pink)); }
+  .step b { display: block; margin-bottom: 4px; }
+  .step span { color: var(--dim); font-size: 14.5px; }
+
+  .faq { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; }
+  details[open] { border-color: rgba(155,108,255,.35); }
+  summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--violet-2); font-weight: 700; }
+  details[open] summary::after { content: "–"; }
+  details p { color: var(--dim); margin: 10px 0 0; font-size: 15px; }
+
+  .final { text-align: center; background: linear-gradient(135deg, rgba(155,108,255,.18), rgba(255,126,179,.10)); border: 1px solid rgba(155,108,255,.3); border-radius: 26px; padding: 56px 20px; }
+  .final h2 { margin-bottom: 10px; }
+  .final p { color: var(--dim); margin: 0 0 26px; }
+  .final .cta { justify-content: center; }
+  .fineprint { color: var(--dim); font-size: 13.5px; margin-top: 22px; }
+
+  footer { padding: 34px 0 50px; color: var(--dim); font-size: 14px; border-top: 1px solid var(--line); }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  code { background: rgba(255,255,255,.07); padding: 1px 6px; border-radius: 6px; font-size: .92em; }
+
+  @media (max-width: 920px) {
+    .hero, .split { grid-template-columns: 1fr; gap: 36px; }
+    .hero { padding: 40px 0 60px; }
+    .features, .faq { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    nav a:not(.nav-dl) { display: none; }
+    section { padding: 64px 0; }
+  }
+  @media (max-width: 480px) {
+    .steps { grid-template-columns: 1fr; }
+    .stage { padding: 20px 10px; }
+    .ov { font-size: 12px; }
+    .r .m { display: none; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <div class="brand"><span class="dot"></span> AION 2 DPS Meter</div>
+<div class="glow"></div>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 20V12M10 20V6M16 20v-9M22 20V3"/></svg></span>AionMeta</div>
     <nav>
       <a href="#funktionen">Funktionen</a>
+      <a href="#updates">Updates</a>
       <a href="#installation">Installation</a>
       <a href="#fragen">Fragen</a>
-      <a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter">GitHub</a>
+      <a class="nav-dl dl-link" href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest">Download</a>
     </nav>
-  </header>
+  </div>
+</header>
 
-  <div class="hero">
+<main>
+  <div class="wrap hero">
     <div>
-      <span class="badge">Kostenlos · Open Source · Windows 11</span>
-      <h1>Sieh deinen <span>Schaden</span> live – direkt über dem Spiel.</h1>
-      <p class="lead">Ein schlankes DPS-Overlay für AION 2 (EU): DPS jedes Gruppenmitglieds, Boss-HP mit Berserk-Timer,
-        Kampfkraft, Tode und Kampfverlauf. Rein passiv – es liest nur mit, was ohnehin an deinen PC geschickt wird.</p>
+      <div class="pill"><i></i><span id="ver-pill">Kostenlos · Open Source</span></div>
+      <h1>Dein Schaden.<br><span class="grad">Live über dem Spiel.</span></h1>
+      <p class="lead"><b>AionMeta</b> ist das DPS-Overlay für AION 2 (EU): DPS jedes Gruppenmitglieds, Boss-HP mit Berserk-Timer, Kampfkraft, Tode
+        und Kampfverlauf. Rein passiv, ohne Eingriff ins Spiel.</p>
       <div class="cta">
-        <a class="btn primary" id="download" href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest">⬇ Herunterladen</a>
-        <a class="btn ghost" href="#installation">So geht's</a>
+        <a class="btn primary dl-link" href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          <span class="dl-text">Kostenlos herunterladen</span></a>
+        <a class="btn ghost" href="#installation">So funktioniert's</a>
       </div>
-      <div class="version" id="version">Neueste Version auf GitHub</div>
+      <div class="meta"><span>Windows 11</span><span>Eine Datei, keine Installation</span><span>Updates per Klick</span></div>
     </div>
 
-    <div class="overlay" aria-label="Beispiel des Overlays (erfundene Namen)">
-      <div class="ov-head"><div><b>● Kampf</b><span class="t">1:42</span></div><div class="icons">⚙ ☰ ✕</div></div>
-      <div class="boss">
-        <div class="name">Beispiel-Boss</div>
-        <div class="status">Kampf läuft · Kill ~0:58 · <span class="bz">Berserk in 3:18</span></div>
-        <div class="hp"><i></i><span><span>5.737.000 HP</span><span>37,0 %</span></span></div>
+    <div class="stage">
+      <div class="ov" id="ov" aria-label="Beispiel des Overlays (erfundene Namen)">
+        <div class="ov-head">
+          <div class="l"><span class="ov-dot"></span><b>Kampf</b><span class="t" id="ov-time">1:42</span></div>
+          <div class="btns" aria-hidden="true"><span>Ⓐ</span><span>⚙</span><span>☷</span><span>⧉</span><span>↺</span><span>☰</span><span>–</span><span>✕</span></div>
+        </div>
+        <div class="ov-line">Nächstes: Dimensionale Invasion in 8m 12s</div>
+        <div class="ov-boss">
+          <div class="bn">Feuerwächter</div>
+          <div class="bs">Kampf läuft · Kill ~<span id="ov-kill">0:58</span> · <span class="bz">Berserk in <span id="ov-bz">3:18</span></span></div>
+          <div class="ov-hp"><div class="trail" id="hp-trail" style="width:38%"></div><div class="fill" id="hp-fill" style="width:37%"></div>
+            <div class="txt"><span id="hp-abs">5.737.000 HP</span><span id="hp-pct">37,0 %</span></div></div>
+        </div>
+        <div class="rows" id="rows"></div>
+        <div class="ov-foot"><span class="me" id="foot-me"></span><span class="lock">🔓</span></div>
       </div>
-      <div class="row"><i style="width:100%;background:linear-gradient(90deg,#7a4ea0,#9b5cc4)"></i><div><span class="ci" style="background:#9b5cc4"></span><span class="n">Lyra<span class="cp">◆ 120,6K</span></span><span class="d">41,56K/s</span><span class="s">30,5 %</span></div></div>
-      <div class="row"><i style="width:66%;background:linear-gradient(90deg,#2f7f7a,#3ea6a0)"></i><div><span class="ci" style="background:#3ea6a0"></span><span class="n">Korvin<span class="cp">◆ 101,6K</span></span><span class="d">27,23K/s</span><span class="s">20,1 %</span></div></div>
-      <div class="row"><i style="width:62%;background:linear-gradient(90deg,#3f7a35,#5ea04e)"></i><div><span class="ci" style="background:#5ea04e"></span><span class="n">Du<span class="me">ICH</span><span class="cp">◆ 97,7K</span></span><span class="d">25,62K/s</span><span class="s">18,6 %</span></div></div>
-      <div class="row"><i style="width:58%;background:linear-gradient(90deg,#a88a30,#d8b040)"></i><div><span class="ci" style="background:#d8b040"></span><span class="n">Mira<span class="cp">◆ 109,9K</span></span><span class="d">24,35K/s</span><span class="s">17,7 %</span></div></div>
-      <div class="row"><i style="width:45%;background:linear-gradient(90deg,#94502e,#c06a3a)"></i><div><span class="ci" style="background:#c06a3a"></span><span class="n">Taro<span class="cp">◆ 84,9K</span></span><span class="d">18,55K/s</span><span class="s">13,2 %</span></div></div>
+      <div class="tag">Beispiel · erfundene Namen</div>
     </div>
   </div>
-</div>
 
-<section id="funktionen">
-  <div class="wrap">
-    <h2>Funktionen</h2>
-    <p class="sub">Alles Wichtige auf einen Blick – und nichts, was stört.</p>
-    <div class="grid">
-      <div class="card"><div class="ico">📊</div><h3>Live-DPS</h3><p>DPS, Schaden und Anteil jedes Spielers, flüssig animiert. Allein nur du, in der Gruppe automatisch alle.</p></div>
-      <div class="card"><div class="ico">🐉</div><h3>Boss-Leiste</h3><p>HP von Dungeon- und Weltbossen, geschätzte Kill-Zeit und Berserk-Countdown, wenn der Boss ein Zeitlimit hat.</p></div>
-      <div class="card"><div class="ico">◆</div><h3>Kampfkraft</h3><p>Die Kampfkraft von dir und deinen Gruppenmitgliedern direkt neben dem Namen.</p></div>
-      <div class="card"><div class="ico">💀</div><h3>Tode</h3><p>Wie oft jemand im Kampf gestorben ist – mit Totenkopf neben dem Namen.</p></div>
-      <div class="card"><div class="ico">📈</div><h3>Details & Verlauf</h3><p>Fähigkeiten pro Spieler, DPS-Kurve, gespeicherte Kämpfe und Wochenstatistik mit Bestwerten.</p></div>
-      <div class="card"><div class="ico">⏰</div><h3>Event-Alarme</h3><p>Erinnerung vor Events und Weltboss-Zeiten, mit Ton. Dazu Tastenkürzel und Tray-Symbol.</p></div>
-      <div class="card"><div class="ico">👁</div><h3>Gut lesbar</h3><p>Kontraststufen, Farbthemen, Schriftgröße, Deckkraft und automatisches Ausblenden ohne Kampf.</p></div>
-      <div class="card"><div class="ico">⬆</div><h3>Updates per Klick</h3><p>Gibt es eine neue Version, erscheint ein Hinweis im Overlay. Ein Klick – geprüft und installiert.</p></div>
-      <div class="card"><div class="ico">🔒</div><h3>Rein passiv</h3><p>Kein Speicherzugriff, keine Injektion, keine Automatisierung. Deine Daten bleiben auf deinem PC.</p></div>
+  <section id="funktionen">
+    <div class="wrap">
+      <div class="eyebrow">Funktionen</div>
+      <h2>Alles Wichtige im Blick – nichts, was stört.</h2>
+      <p class="sub">Allein siehst du nur dich, in der Gruppe automatisch alle. Ohne Knopfdruck.</p>
+      <div class="features">
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M4 20V12M10 20V6M16 20v-9M22 20V3"/></svg></div><h3>Live-DPS</h3><p>DPS, Schaden und Anteil jedes Spielers, flüssig animiert und nach Klassen eingefärbt.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 12a9 9 0 0 1 18 0"/><rect x="3" y="15" width="18" height="5" rx="1.5"/></svg></div><h3>Boss-Karte</h3><p>HP von Dungeon- und Weltbossen, geschätzte Kill-Zeit und automatischer Berserk-Countdown.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 2l9 10-9 10-9-10z"/><path d="M12 7l4 5-4 5-4-5z"/></svg></div><h3>Kampfkraft</h3><p>Die Kampfkraft von dir und deiner Gruppe direkt neben dem Namen.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 3C7 3 4 6.5 4 10.5c0 2.6 1.4 4.4 3 5.3V19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3.2c1.6-.9 3-2.7 3-5.3C20 6.5 17 3 12 3z"/><circle cx="9" cy="11" r="1.6"/><circle cx="15" cy="11" r="1.6"/></svg></div><h3>Tode</h3><p>Wie oft jemand im Kampf gestorben ist – mit Totenkopf neben dem Namen.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 6-8 3 4"/><path d="M3 21h18"/></svg></div><h3>Details & Verlauf</h3><p>Fähigkeiten pro Spieler, DPS-Kurve, gespeicherte Kämpfe und Wochenstatistik mit Bestwerten.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3L2 6M19 3l3 3"/></svg></div><h3>Event-Alarme</h3><p>Erinnerung vor Events und Weltboss-Zeiten, mit Ton. Dazu Tastenkürzel und Tray-Symbol.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="rgba(201,178,255,.5)"/></svg></div><h3>Gut lesbar</h3><p>Kontraststufen, Farbthemen, Schriftgröße, Deckkraft und automatisches Ausblenden.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div><h3>Updates per Klick</h3><p>Neue Version? Ein Hinweis im Overlay, ein Klick – geprüft und installiert.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Rein passiv</h3><p>Kein Speicherzugriff, keine Injektion, keine Automatisierung. Deine Daten bleiben bei dir.</p></div>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section id="installation">
-  <div class="wrap">
-    <h2>Installation</h2>
-    <p class="sub">In zwei Minuten startklar.</p>
-    <ol class="steps">
-      <li><b>Npcap installieren</b><span>Der Meter liest die Netzwerkpakete mit <a href="https://npcap.com/">Npcap</a> mit. Einmal installieren, Standard-Einstellungen genügen.</span></li>
-      <li><b>DPS Meter herunterladen</b><span>Die neueste <code>.exe</code> unter <a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest">Releases</a> laden. Keine Installation nötig – eine einzige Datei.</span></li>
-      <li><b>Starten</b><span>EXE starten (Windows fragt evtl. nach – die Datei ist nicht signiert: „Weitere Informationen“ → „Trotzdem ausführen“). Dann AION 2 starten.</span></li>
-      <li><b>Kämpfen</b><span>Das Overlay zeigt automatisch deinen Kampf. Einstellungen über das ⚙-Symbol.</span></li>
-    </ol>
-  </div>
-</section>
+  <section id="updates">
+    <div class="wrap split">
+      <div>
+        <div class="eyebrow">Immer aktuell</div>
+        <h2>Neue Version? Ein Klick im Overlay.</h2>
+        <p class="sub">Kein Suchen, kein GitHub. Der Meter merkt selbst, wenn es ein Update gibt.</p>
+        <ul class="checks">
+          <li><div><b>Automatischer Hinweis</b><span>Beim Start und alle paar Stunden wird nach einer neuen Version geschaut.</span></div></li>
+          <li><div><b>Sicher geprüft</b><span>Download nur von GitHub, mit Prüfsumme kontrolliert – sonst wird nichts installiert.</span></div></li>
+          <li><div><b>Alles bleibt</b><span>Einstellungen und gespeicherte Kämpfe bleiben erhalten.</span></div></li>
+        </ul>
+      </div>
+      <div class="update-demo">
+        <div class="ov" aria-label="Beispiel: Update-Hinweis im Overlay">
+          <div class="ov-head"><div class="l"><span class="ov-dot" style="background:#7d8597;box-shadow:none;animation:none"></span><b>Inaktiv</b></div><div class="btns" aria-hidden="true"><span>Ⓐ</span><span>⚙</span><span>☰</span><span>–</span><span>✕</span></div></div>
+          <div class="ov-update">⬆ Neue Version verfügbar – hier klicken zum Aktualisieren</div>
+          <div style="text-align:center;color:#c8cdd6;padding:14px 0 10px">Warte auf Kampf</div>
+          <div class="ov-foot"><span class="me" id="foot-me-2"></span><span class="lock">🔓</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<section id="fragen">
-  <div class="wrap">
-    <h2>Fragen</h2>
-    <p class="sub">&nbsp;</p>
-    <details><summary>Verändert der Meter etwas am Spiel?</summary><p>Nein. Er liest nur die Netzwerkpakete mit, die ohnehin an deinen PC gehen. Er greift nicht auf den Spielspeicher zu, schleust nichts ein und sendet nichts an das Spiel oder den Server.</p></details>
-    <details><summary>Ist das erlaubt?</summary><p>Der Meter ist inoffiziell und steht in keiner Verbindung zu NCSOFT. Die Nutzungsbedingungen von NCSOFT untersagen nicht autorisierte Programme – die Nutzung erfolgt auf eigene Gefahr.</p></details>
-    <details><summary>Wie bekomme ich Updates?</summary><p>Der Meter fragt beim Start und alle 6 Stunden auf GitHub nach einer neuen Version. Gibt es eine, erscheint oben im Overlay ein goldener Hinweis – ein Klick lädt sie, prüft die Prüfsumme und startet neu. Einstellungen und Kämpfe bleiben erhalten.</p></details>
-    <details><summary>Warum sehe ich bei anderen keine Kampfkraft?</summary><p>Das Spiel schickt die Kampfkraft nur für dich und deine Gruppenmitglieder, nicht für fremde Spieler.</p></details>
-    <details><summary>Wo werden meine Daten gespeichert?</summary><p>Nur lokal unter <code>Dokumente\Aion2DpsMeter</code> (Einstellungen, Kämpfe). Nichts wird hochgeladen.</p></details>
-    <details><summary>Was brauche ich?</summary><p>Windows 11 (64 Bit, Windows 10 sollte auch gehen) und Npcap. .NET muss nicht installiert sein.</p></details>
-  </div>
-</section>
+  <section id="installation">
+    <div class="wrap">
+      <div class="eyebrow">Installation</div>
+      <h2>In zwei Minuten startklar.</h2>
+      <p class="sub">Eine Datei, keine Installation, kein .NET nötig.</p>
+      <div class="steps">
+        <div class="step"><b>Npcap installieren</b><span>Einmalig <a href="https://npcap.com/">Npcap</a> installieren – die Standard-Einstellungen genügen.</span></div>
+        <div class="step"><b>Herunterladen</b><span>Die neueste <code>.exe</code> laden – über den Knopf oben.</span></div>
+        <div class="step"><b>Starten</b><span>EXE öffnen. Warnt Windows: „Weitere Informationen“ → „Trotzdem ausführen“.</span></div>
+        <div class="step"><b>Kämpfen</b><span>AION 2 starten – das Overlay zeigt deinen Kampf automatisch.</span></div>
+      </div>
+    </div>
+  </section>
 
-<section>
-  <div class="wrap">
-    <div class="note">⚠ Inoffizielles Fan-Projekt. Keine Verbindung zu NCSOFT. AION ist eine Marke von NCSOFT. Nutzung auf eigene Gefahr.</div>
-  </div>
-</section>
+  <section id="fragen">
+    <div class="wrap">
+      <div class="eyebrow">Fragen</div>
+      <h2>Häufige Fragen</h2>
+      <p class="sub">&nbsp;</p>
+      <div class="faq">
+        <details><summary>Verändert der Meter etwas am Spiel?</summary><p>Nein. Er liest nur die Netzwerkpakete mit, die ohnehin an deinen PC gehen. Kein Speicherzugriff, keine Injektion, nichts wird an Spiel oder Server gesendet.</p></details>
+        <details><summary>Ist das erlaubt?</summary><p>Der Meter ist inoffiziell und steht in keiner Verbindung zu NCSOFT. Die Nutzungsbedingungen untersagen nicht autorisierte Programme – Nutzung auf eigene Gefahr.</p></details>
+        <details><summary>Wie bekomme ich Updates?</summary><p>Automatisch: Gibt es eine neue Version, erscheint oben im Overlay ein goldener Hinweis. Ein Klick lädt sie, prüft sie und startet neu.</p></details>
+        <details><summary>Warum sehe ich bei Fremden keine Kampfkraft?</summary><p>Das Spiel schickt die Kampfkraft nur für dich und deine Gruppenmitglieder.</p></details>
+        <details><summary>Wo werden meine Daten gespeichert?</summary><p>Nur lokal unter <code>Dokumente\Aion2DpsMeter</code>. Nichts wird hochgeladen.</p></details>
+        <details><summary>Was brauche ich?</summary><p>Windows 11 (64 Bit) und Npcap. Windows 10 sollte ebenfalls funktionieren.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="final">
+        <h2>Bereit für den nächsten Boss?</h2>
+        <p id="ver-final">Kostenlos, Open Source, in zwei Minuten startklar.</p>
+        <div class="cta">
+          <a class="btn primary dl-link" href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest"><span class="dl-text">Kostenlos herunterladen</span></a>
+          <a class="btn ghost" href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter">Quellcode auf GitHub</a>
+        </div>
+        <div class="fineprint">Inoffizielles Fan-Projekt · keine Verbindung zu NCSOFT · AION ist eine Marke von NCSOFT · Nutzung auf eigene Gefahr</div>
+      </div>
+    </div>
+  </section>
+</main>
 
 <footer>
-  <div class="wrap">Open Source unter MIT-Lizenz · <a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter">Quellcode auf GitHub</a></div>
+  <div class="wrap"><span>AionMeta · MIT-Lizenz</span><a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter">GitHub</a></div>
 </footer>
 
 <script>
-  // Neueste Version und direkter EXE-Link von der GitHub-API (ohne Erfolg bleibt der Link zur Release-Seite).
+  // ---- Klassen-Symbole (eigene Vektorzeichnungen wie im Meter) ----
+  const CLASSES = {
+    Assassine:   { c: "#9b5cc4", p: [["M19.5,3 L20.5,4 L11,14.5 L9.5,13 Z", 1], ["M7,12 L12,17 M5.5,18.5 L8.5,15.5", 0]] },
+    Beschwoerer: { c: "#3ea6a0", p: [["M12,12 m-1,0 a1,1 0 1,1 2,0 a3,3 0 1,1 -6,0 a5,5 0 1,1 10,0 a7,7 0 1,1 -14,0", 0]] },
+    Bogen:       { c: "#5ea04e", p: [["M7,2.5 C17,6 17,18 7,21.5 M7,2.5 L7,21.5 M3,12 L20,12 M17,9.5 L20,12 L17,14.5", 0]] },
+    Kleriker:    { c: "#d8b040", p: [["M10,3 H14 V10 H21 V14 H14 V21 H10 V14 H3 V10 H10 Z", 1]] },
+    Gladiator:   { c: "#c06a3a", p: [["M12,2 L14,5 L14,14 L17.5,14 L17.5,16 L13.5,16 L13.5,20 L14.5,22 L9.5,22 L10.5,20 L10.5,16 L6.5,16 L6.5,14 L10,14 L10,5 Z", 1]] },
+  };
+  const icon = (k) => {
+    const cl = CLASSES[k];
+    const shapes = cl.p.map(([d, f]) => f
+      ? `<path d="${d}" fill="#fff" transform="translate(5 5) scale(.58)"/>`
+      : `<path d="${d}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" transform="translate(5 5) scale(.58)"/>`).join("");
+    return `<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11.5" fill="${cl.c}"/><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(255,255,255,.35)"/>${shapes}</svg>`;
+  };
+  const CP = `<svg viewBox="0 0 24 24"><path d="M12,1.5 L22.5,12 L12,22.5 L1.5,12 Z" fill="rgba(95,224,200,.35)" stroke="#5fe0c8" stroke-width="2"/><path d="M12,7.5 L16.5,12 L12,16.5 L7.5,12 Z" fill="#e9fffa"/></svg>`;
+  const SKULL = `<svg width="12" height="12" viewBox="0 0 24 24"><path d="M12,2 C6.5,2 3,5.8 3,10.5 C3,13.6 4.6,15.6 6.5,16.6 L6.5,19.5 C6.5,20.6 7.4,21.5 8.5,21.5 L15.5,21.5 C16.6,21.5 17.5,20.6 17.5,19.5 L17.5,16.6 C19.4,15.6 21,13.6 21,10.5 C21,5.8 17.5,2 12,2 Z" fill="#ece6da"/><circle cx="8.6" cy="10.8" r="2.4" fill="#1a161c"/><circle cx="15.4" cy="10.8" r="2.4" fill="#1a161c"/></svg>`;
+
+  // ---- Beispielgruppe (erfundene Namen) ----
+  const players = [
+    { n: "Lyra",   k: "Assassine",   cp: "120,6K", dps: 41560 },
+    { n: "Korvin", k: "Beschwoerer", cp: "101,6K", dps: 27230 },
+    { n: "Du",     k: "Bogen",       cp: "97,7K",  dps: 25620, own: 1 },
+    { n: "Mira",   k: "Kleriker",    cp: "109,9K", dps: 24350, dead: 1 },
+    { n: "Taro",   k: "Gladiator",   cp: "84,9K",  dps: 18550 },
+  ];
+  const de = (v, d = 1) => v.toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const k = (v) => v >= 1e6 ? de(v / 1e6, 2) + "M" : v >= 1e3 ? de(v / 1e3, 2) + "K" : String(Math.round(v));
+  const rowsEl = document.getElementById("rows");
+  players.forEach(p => {
+    p.el = document.createElement("div");
+    p.el.className = "r" + (p.own ? " own" : "");
+    const cl = CLASSES[p.k].c;
+    p.el.innerHTML = `<div class="bar" style="background:linear-gradient(90deg, ${cl}cc, ${cl})"></div>
+      <div class="c">${icon(p.k)}<span class="n">${p.n}</span>${p.own ? '<span class="badge">ICH</span>' : ""}
+      <span class="cp">${CP}${p.cp}</span>${p.dead ? `<span class="dead">${SKULL}1</span>` : ""}<span class="sp"></span>
+      <span class="d"></span><span class="m"></span><span class="s"></span></div>`;
+    rowsEl.appendChild(p.el);
+  });
+  document.getElementById("foot-me").innerHTML = icon("Bogen") + "Du";
+  document.getElementById("foot-me-2").innerHTML = icon("Bogen") + "Du";
+
+  // ---- kleine Animation: Zeit läuft, DPS schwanken, Boss verliert HP ----
+  let t = 102, hp = 5737000;
+  const maxHp = 15504000;
+  const tick = () => {
+    t++;
+    players.forEach(p => { p.cur = p.dps * (0.94 + Math.random() * 0.12); p.total = p.cur * t; });
+    const top = Math.max(...players.map(p => p.cur));
+    const sum = players.reduce((a, p) => a + p.total, 0);
+    players.sort((a, b) => b.cur - a.cur).forEach((p, i) => {
+      p.el.style.order = i;
+      rowsEl.appendChild(p.el);
+      p.el.querySelector(".bar").style.width = (p.cur / top * 100).toFixed(1) + "%";
+      p.el.querySelector(".d").textContent = k(p.cur) + "/s";
+      p.el.querySelector(".m").textContent = k(p.total);
+      p.el.querySelector(".s").textContent = de(p.total / sum * 100) + " %";
+    });
+    const groupDps = players.reduce((a, p) => a + p.cur, 0);
+    hp = Math.max(0, hp - groupDps);
+    if (hp <= 0) { hp = maxHp * 0.62; t = 30; }
+    const pct = hp / maxHp * 100;
+    document.getElementById("hp-fill").style.width = pct + "%";
+    setTimeout(() => document.getElementById("hp-trail").style.width = pct + "%", 400);
+    document.getElementById("hp-abs").textContent = Math.round(hp).toLocaleString("de-DE") + " HP";
+    document.getElementById("hp-pct").textContent = de(pct) + " %";
+    const mm = (s) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+    document.getElementById("ov-time").textContent = mm(t);
+    document.getElementById("ov-kill").textContent = mm(hp / groupDps);
+    document.getElementById("ov-bz").textContent = mm(Math.max(0, 300 - t));
+  };
+  tick();
+  setInterval(tick, 1000);
+
+  // ---- neueste Version und direkter EXE-Link von GitHub ----
   (async () => {
     try {
       const r = await fetch("https://api.github.com/repos/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest");
@@ -205,11 +410,13 @@
       const rel = await r.json();
       const exe = (rel.assets || []).find(a => /\.exe$/i.test(a.name));
       const tag = String(rel.tag_name || "").replace(/^v/i, "");
-      if (tag) document.getElementById("version").textContent = "Neueste Version: " + tag + (rel.published_at ? " · " + new Date(rel.published_at).toLocaleDateString("de-DE") : "");
+      if (tag) {
+        document.getElementById("ver-pill").textContent = "Version " + tag + " · Kostenlos · Open Source";
+        document.getElementById("ver-final").textContent = "Version " + tag + " – kostenlos, Open Source, in zwei Minuten startklar.";
+      }
       if (exe) {
-        const btn = document.getElementById("download");
-        btn.href = exe.browser_download_url;
-        btn.textContent = "⬇ Herunterladen (" + (exe.size / 1048576).toFixed(0) + " MB)";
+        document.querySelectorAll(".dl-link").forEach(a => a.href = exe.browser_download_url);
+        document.querySelectorAll(".dl-text").forEach(s => s.textContent = "Kostenlos herunterladen · " + (exe.size / 1048576).toFixed(0) + " MB");
       }
     } catch (e) { /* offline: Link zur Release-Seite bleibt */ }
   })();

@@ -51,7 +51,7 @@ public sealed class OverlaySettingsWindow : Window
         _worldBosses = worldBosses;
         _setWorldBosses = setWorldBosses;
 
-        Title = "DPS Meter – Einstellungen";
+        Title = "AionMeta – Einstellungen";
         Width = 880;
         Height = 640;
         Background = Bg;
@@ -151,7 +151,7 @@ public sealed class OverlaySettingsWindow : Window
 
         // Navigation: Kopf mit Programmname, darunter die Seiten; die gewählte Seite mit Akzentstreifen links.
         var brand = new StackPanel { Margin = new Thickness(14, 16, 14, 18) };
-        brand.Children.Add(new TextBlock { Text = "DPS Meter", FontSize = 18, FontWeight = FontWeights.Bold });
+        brand.Children.Add(new TextBlock { Text = "AionMeta", FontSize = 18, FontWeight = FontWeights.Bold });
         brand.Children.Add(new TextBlock { Text = "Einstellungen", Foreground = DimBrush, FontSize = 12 });
         _nav.Children.Add(brand);
         foreach (var name in _pages.Keys)

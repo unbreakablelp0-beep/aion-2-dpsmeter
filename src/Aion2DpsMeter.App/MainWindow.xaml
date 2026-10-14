@@ -1,7 +1,7 @@
-<Window x:Class="Aion2DpsMeter.App.MainWindow"
+﻿<Window x:Class="Aion2DpsMeter.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="AION 2 DPS Meter" Height="620" Width="620" MinWidth="480" MinHeight="420"
+        Title="AionMeta" Height="620" Width="620" MinWidth="480" MinHeight="420"
         WindowStartupLocation="CenterScreen" Background="#F4F5F7"
         Loaded="OnLoaded" Closing="OnClosing">
     <Window.Resources>
@@ -26,7 +26,7 @@
 
     <DockPanel Margin="16">
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
-            <TextBlock Text="AION 2 DPS Meter" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="AionMeta" FontSize="22" FontWeight="SemiBold" />
             <TextBlock Text="Live-Schaden für dich und deine Gruppe – rein passiv, ohne Eingriff ins Spiel" Foreground="Gray" />
         </StackPanel>
 

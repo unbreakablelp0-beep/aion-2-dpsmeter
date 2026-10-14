@@ -1,4 +1,4 @@
-# Baut die öffentliche Release-EXE (ohne eingebettete Spielgrafiken) für GitHub und schreibt die Prüfsumme (SHA256SUMS).
+﻿# Baut die öffentliche Release-EXE (ohne eingebettete Spielgrafiken) für GitHub und schreibt die Prüfsumme (SHA256SUMS).
 # Version aus Directory.Build.props. Ausgabe: artifacts\<Version>\release. Ein vorhandener Ausgabeordner wird nie überschrieben.
 # Danach auf GitHub ein Release mit Tag „v<Version>“ anlegen und BEIDE Dateien anhängen (EXE und SHA256SUMS).
 param(
@@ -19,8 +19,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish fehlgeschlagen ($LASTEXITCODE)." }
 
     New-Item -ItemType Directory -Path $Output | Out-Null
-    $name = "Aion2DpsMeter-$version-win-x64.exe"
-    Copy-Item "$buildDir\out\Aion2DpsMeter.App.exe" (Join-Path $Output $name)
+    $name = "AionMeta-$version-win-x64.exe"
+    Copy-Item "$buildDir\out\AionMeta.exe" (Join-Path $Output $name)
     $hash = (Get-FileHash (Join-Path $Output $name) -Algorithm SHA256).Hash.ToLowerInvariant()
     [IO.File]::WriteAllText((Join-Path $Output 'SHA256SUMS'), "$hash  $name`n", [Text.UTF8Encoding]::new($false))
     Write-Host "Fertig: $Output"

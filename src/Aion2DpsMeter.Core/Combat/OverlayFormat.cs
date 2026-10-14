@@ -59,7 +59,7 @@ public static class OverlayFormat
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentOutOfRangeException.ThrowIfLessThan(maxRows, 1);
 
-        if (snapshot.Start is null) return new OverlayContent("DPS-Meter – noch keine Treffer", [], 0, OwnOnly: ownOnly);
+        if (snapshot.Start is null) return new OverlayContent("AionMeta – noch keine Treffer", [], 0, OwnOnly: ownOnly);
         var elapsed = Elapsed(snapshot.Duration);
         var active = snapshot.Active;
         var title = active ? "Kampf" : "Kampf beendet";
@@ -84,7 +84,7 @@ public static class OverlayFormat
             share = a => shownTotal == 0 ? 0 : (double)a.Damage / shownTotal;
             if (shown.Count == 0)
             {
-                return new OverlayContent("DPS-Meter – noch keine eigenen Treffer", [], snapshot.Actors.Count, false, "Inaktiv", string.Empty,
+                return new OverlayContent("AionMeta – noch keine eigenen Treffer", [], snapshot.Actors.Count, false, "Inaktiv", string.Empty,
                     OwnOnly: true, OwnUnknown: !snapshot.Actors.Any(a => a.IsOwn || a.IsRememberedOwn));
             }
 
@@ -251,11 +251,11 @@ public static class OverlayFormat
     public static string ToClipboardText(OverlayContent content)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (content.Rows.Count == 0) return "AION 2 DPS – noch keine Treffer";
+        if (content.Rows.Count == 0) return "AionMeta – noch keine Treffer";
 
         var lines = new List<string>
         {
-            $"AION 2 DPS – {content.Title} {content.Elapsed} – gesamt {content.TotalDamage} ({content.TotalDps} DPS)",
+            $"AionMeta – {content.Title} {content.Elapsed} – gesamt {content.TotalDamage} ({content.TotalDps} DPS)",
         };
         lines.AddRange(content.Rows.Select((r, i) =>
             $"{i + 1}. {r.Name}{(r.Class.Length > 0 ? $" ({r.Class})" : "")}: {r.Damage} | {r.Dps} DPS | {r.Share}"));
