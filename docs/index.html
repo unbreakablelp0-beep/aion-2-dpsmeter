@@ -456,7 +456,9 @@
         el.textContent = Math.round(total * (1 - Math.pow(1 - p, 3))).toLocaleString("de-DE");
         if (p < 1) requestAnimationFrame(step);
       };
-      requestAnimationFrame(step);
+      el.textContent = total.toLocaleString("de-DE");
+      if (document.visibilityState === "visible") requestAnimationFrame(step);
+      setTimeout(() => el.textContent = total.toLocaleString("de-DE"), 1000); // Endwert sicher, auch ohne Animation
     } catch (e) { /* offline: Zähler bleibt verborgen */ }
   })();
 
