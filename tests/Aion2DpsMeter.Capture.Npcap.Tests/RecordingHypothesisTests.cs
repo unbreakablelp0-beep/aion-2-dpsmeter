@@ -541,9 +541,9 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
             return;
         }
 
-        var od = new List<long>();
+        var od = new List<string>();
         PartyRoster? last = null;
-        var decoder = new LiveCombatDecoder(_ => { }, onParty: r => last = r, onOdBonus: od.Add);
+        var decoder = new LiveCombatDecoder(_ => { }, onParty: r => last = r, onOd: o => od.Add($"{o.Current} (+{o.Bonus}) = {o.Total}"));
         await new PcapFileSource().ReadRawAsync(path, decoder.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
         output.WriteLine($"OD-ZUSATZ: {string.Join(" → ", od)}");
         foreach (var m in last?.Members ?? [])

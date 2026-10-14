@@ -102,7 +102,7 @@ public partial class MainWindow : Window
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Aion2DpsMeter", "Aufnahmen");
 
     private readonly UpdateService _updates = new();
-    private long _odBonus = -1; // Zusatz-Od-Energie aus dem Spiel (-1 = noch unbekannt)
+    private volatile OdEnergy? _od; // Od-Energie aus dem Spiel (null = noch nicht gesehen)
     private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromSeconds(10) }; // erst kurz nach dem Start, dann alle 6 h
     private UpdateInfo? _update;
     private string? _updateProgress;
@@ -679,7 +679,7 @@ public partial class MainWindow : Window
                 _liveMeter.ReportOwnCombatPower,
                 _enemyHp.ReportBattleState,
                 _liveMeter.ReportDeath,
-                bonus => Interlocked.Exchange(ref _odBonus, bonus));
+                od => _od = od);
             _enemyHp.Reset();
             _liveDecoder = decoder;
             Interlocked.Exchange(ref _liveErrors, 0);
@@ -774,7 +774,7 @@ public partial class MainWindow : Window
             update: UpdateLine,
             applyUpdate: StartUpdate,
             ping: () => _liveDecoder?.Ping.Current(DateTimeOffset.UtcNow),
-            odBonus: () => Interlocked.Read(ref _odBonus) is var od and >= 0 ? od : null);
+            od: () => _od);
         _overlay.Closed += (_, _) => OverlayButton.Content = "Overlay ein";
         _overlay.Show();
         OverlayButton.Content = "Overlay aus";

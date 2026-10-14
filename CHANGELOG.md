@@ -1,6 +1,7 @@
 # Patchnotes
 
 ## Unveröffentlicht
+- Od-Energie jetzt komplett: aufladender Wert + Zusatz zusammengerechnet (z. B. 110 = 15 + 95). In den Einstellungen umschaltbar auf „15 (+95)“ wie im Spiel.
 - Od-Energie: Solange noch kein Wert erkannt wurde, steht ein ausgegrauter Kristall mit „–“ da (Hinweis beim Drüberfahren), statt dass die Anzeige fehlt.
 
 ## 0.0.6 – 14.10.2026

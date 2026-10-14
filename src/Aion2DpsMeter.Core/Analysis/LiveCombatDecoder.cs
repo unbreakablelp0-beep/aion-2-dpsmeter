@@ -34,7 +34,7 @@ public sealed class LiveCombatDecoder
     private readonly Action<long>? _onOwnCombatPower;
     private readonly Action<BattleState>? _onBattleState;
     private readonly Action<uint, DateTimeOffset>? _onDeath;
-    private readonly Action<long>? _onOdBonus;
+    private readonly Action<OdEnergy>? _onOd;
     private readonly TcpStreamReassembler _reassembler = new(TimeSpan.FromSeconds(2));
     private readonly Dictionary<TcpStreamKey, StreamHypothesisCheck> _checks = new();
     private readonly Dictionary<StreamHypothesisCheck, List<ObservedFrame>> _pending = new();
@@ -58,9 +58,9 @@ public sealed class LiveCombatDecoder
         Action<long>? onOwnCombatPower = null,
         Action<BattleState>? onBattleState = null,
         Action<uint, DateTimeOffset>? onDeath = null,
-        Action<long>? onOdBonus = null)
+        Action<OdEnergy>? onOd = null)
     {
-        _onOdBonus = onOdBonus;
+        _onOd = onOd;
         ArgumentNullException.ThrowIfNull(onHit);
         _onHit = onHit;
         _onPlayer = onPlayer;
@@ -160,7 +160,7 @@ public sealed class LiveCombatDecoder
 
         if (frame.Type is OdEnergyHypothesis.ListType or OdEnergyHypothesis.UpdateType)
         {
-            if (_onOdBonus is not null && OdEnergyHypothesis.ParseBonus(frame.Type, frame.Body) is { } bonus) _onOdBonus(bonus);
+            if (_onOd is not null && OdEnergyHypothesis.Parse(frame.Type, frame.Body) is { } od) _onOd(od);
             return;
         }
 

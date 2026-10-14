@@ -136,7 +136,7 @@ public sealed class OverlayWindow : Window
     // Zusatz-Od-Energie (blauer Wert, sicher aus dem Spiel): eigenes Kristall-Symbol + „+95“, links neben dem Ping.
     private readonly StackPanel _od = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), ToolTip = "Zusatz-Od-Energie (aus dem Spiel gelesen)" };
     private readonly TextBlock _odText = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(3, 0, 0, 0), Foreground = Frozen(Color.FromRgb(0x5C, 0xC8, 0xFF)), FontWeight = FontWeights.SemiBold };
-    private Func<long?>? _odValue;
+    private Func<Aion2DpsMeter.Core.Analysis.OdEnergy?>? _odValue;
 
     // Gruppen-Lobby: Mitglieder der Gruppenliste, solange kein Kampf läuft.
     private readonly StackPanel _lobby = new() { Margin = new Thickness(0, 2, 0, 4), Visibility = Visibility.Collapsed };
@@ -175,10 +175,10 @@ public sealed class OverlayWindow : Window
         Func<string?>? update = null,
         Action? applyUpdate = null,
         Func<TimeSpan?>? ping = null,
-        Func<long?>? odBonus = null)
+        Func<Aion2DpsMeter.Core.Analysis.OdEnergy?>? od = null)
     {
         _pingValue = ping;
-        _odValue = odBonus;
+        _odValue = od;
         _npcInfo = npcInfo;
         _update = update;
         _applyUpdate = applyUpdate;
@@ -762,11 +762,15 @@ public sealed class OverlayWindow : Window
 
         _od.Visibility = Visibility.Visible;
         _odText.FontSize = Math.Max(9, FontSize - 2);
-        if (_odValue?.Invoke() is { } bonus)
+        if (_odValue?.Invoke() is { } odEnergy)
         {
+            // Zusammengerechnet wie gewünscht: aufladender Wert + Zusatzwert; die Aufteilung steht im Tooltip.
+            var german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
             _od.Opacity = 1;
-            _odText.Text = $"+{bonus.ToString("#,0", System.Globalization.CultureInfo.GetCultureInfo("de-DE"))}";
-            _od.ToolTip = "Zusatz-Od-Energie (aus dem Spiel gelesen)";
+            _odText.Text = _settings.OdTotal
+                ? odEnergy.Total.ToString("#,0", german)
+                : $"{odEnergy.Current.ToString("#,0", german)} (+{odEnergy.Bonus.ToString("#,0", german)})";
+            _od.ToolTip = $"Od-Energie {odEnergy.Total.ToString("#,0", german)} = {odEnergy.Current.ToString("#,0", german)} (lädt alle 3 h auf) + {odEnergy.Bonus.ToString("#,0", german)} Zusatz";
         }
         else
         {

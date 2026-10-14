@@ -17,6 +17,11 @@ public class OdAndLobbyTests
         var list = Convert.FromHexString("008B969800008C9698000C018793030F3704028793030E04038793030E0404");
         Assert.Equal(55, OdEnergyHypothesis.ParseBonus(OdEnergyHypothesis.ListType, list));
 
+        // Zusammengerechnet wie im Spiel: 15 (+95) = 110.
+        var od = OdEnergyHypothesis.Parse(OdEnergyHypothesis.UpdateType, Convert.FromHexString("010C018793030F5F0128000000"))!;
+        Assert.Equal(new OdEnergy(15, 95), od);
+        Assert.Equal(110, od.Total);
+
         // Andere Typen / andere 0C-61-Inhalte: nichts.
         Assert.Null(OdEnergyHypothesis.ParseBonus(0x0C61, Convert.FromHexString("00040A0000000E02")));
         Assert.Null(OdEnergyHypothesis.ParseBonus(0x0297, Convert.FromHexString("010C018793030F5F0128000000")));
