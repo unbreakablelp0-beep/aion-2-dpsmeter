@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AION 2 DPS Meter</title>
+<meta name="description" content="Inoffizielles, rein passives DPS-Meter-Overlay für AION 2 (EU): DPS je Spieler, Boss-HP, Berserk-Timer, Gruppe, Kampfverlauf. Kostenlos, Open Source.">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --panel: #151821;
+    --panel-2: #1b1f2a;
+    --line: #2a2f3d;
+    --text: #e9ecf2;
+    --dim: #a9b0be;
+    --accent: #9b6cff;
+    --accent-2: #c3a6ff;
+    --red: #d24a4a;
+    --gold: #f2c14e;
+    --green: #5ea04e;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 600px at 70% -10%, #2a1f4a 0%, transparent 60%), var(--bg);
+    color: var(--text);
+    font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  }
+  a { color: var(--accent-2); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+  header.top { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .3px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 10px #3ddc84; }
+  nav a { color: var(--dim); text-decoration: none; margin-left: 18px; font-size: 15px; }
+  nav a:hover { color: var(--text); }
+
+  .hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; padding: 40px 0 60px; }
+  .hero h1 { font-size: clamp(32px, 5vw, 52px); line-height: 1.1; margin: 0 0 14px; }
+  .hero h1 span { background: linear-gradient(90deg, var(--accent-2), #ff8fb1); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.lead { color: var(--dim); font-size: 18px; margin: 0 0 26px; }
+  .badge { display: inline-block; font-size: 13px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; margin-bottom: 18px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 22px; border-radius: 12px; font-weight: 600; text-decoration: none; border: 1px solid transparent; }
+  .btn.primary { background: linear-gradient(180deg, #a67dff, #7b4ee6); color: #fff; box-shadow: 0 6px 24px rgba(155,108,255,.35); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.ghost { border-color: var(--line); color: var(--text); background: rgba(255,255,255,.03); }
+  .version { color: var(--dim); font-size: 14px; margin-top: 12px; }
+
+  /* Overlay-Vorschau (nur HTML/CSS, erfundene Namen) */
+  .overlay { background: rgba(18,20,26,.92); border: 1px solid rgba(155,108,255,.45); border-radius: 12px; padding: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.5); font-size: 13px; }
+  .ov-head { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; padding: 4px 8px; }
+  .ov-head b { font-weight: 600; }
+  .ov-head .t { color: var(--dim); margin-left: 8px; font-variant-numeric: tabular-nums; }
+  .ov-head .icons { color: var(--dim); letter-spacing: 6px; }
+  .boss { margin: 8px 0; background: rgba(26,12,14,.9); border: 1px solid #c83c3c; border-radius: 8px; padding: 6px 8px 8px; }
+  .boss .name { font-weight: 700; font-size: 15px; }
+  .boss .status { color: var(--dim); font-size: 12px; }
+  .boss .status .bz { color: #ff9b6b; }
+  .hp { position: relative; height: 18px; margin-top: 6px; border-radius: 4px; background: rgba(90,22,22,.55); border: 1px solid rgba(184,58,58,.6); overflow: hidden; }
+  .hp i { position: absolute; inset: 0 auto 0 0; width: 37%; background: linear-gradient(180deg, #e25555, #a82c2c); }
+  .hp span { position: relative; display: flex; justify-content: space-between; padding: 0 6px; font-size: 11px; font-weight: 700; line-height: 18px; }
+  .row { position: relative; height: 26px; margin-top: 4px; border-radius: 4px; background: rgba(0,0,0,.25); overflow: hidden; }
+  .row i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+  .row div { position: relative; display: flex; align-items: center; gap: 8px; height: 100%; padding: 0 8px; }
+  .row .n { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .cp { color: #b8e6dc; font-size: 11px; font-weight: 400; margin-left: 6px; }
+  .row .me { background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 0 4px; border-radius: 3px; margin-left: 6px; }
+  .row .d { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .row .s { color: var(--dim); width: 54px; text-align: right; font-variant-numeric: tabular-nums; }
+  .ci { width: 18px; height: 18px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); }
+
+  section { padding: 56px 0; border-top: 1px solid rgba(255,255,255,.05); }
+  section h2 { font-size: 30px; margin: 0 0 8px; }
+  section p.sub { color: var(--dim); margin: 0 0 28px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 18px; }
+  .card p { margin: 0; color: var(--dim); font-size: 15px; }
+  .card .ico { font-size: 24px; margin-bottom: 8px; }
+
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  ol.steps li { counter-increment: s; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 16px 16px 60px; position: relative; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 16px; top: 14px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: rgba(155,108,255,.2); color: var(--accent-2); }
+  ol.steps li b { display: block; }
+  ol.steps li span { color: var(--dim); font-size: 15px; }
+
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { color: var(--dim); margin: 10px 0 0; }
+
+  .note { background: rgba(242,193,78,.08); border: 1px solid rgba(242,193,78,.35); border-radius: var(--radius); padding: 16px 18px; color: #f3dfa8; }
+  footer { padding: 30px 0 50px; color: var(--dim); font-size: 14px; border-top: 1px solid rgba(255,255,255,.05); }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 20px; }
+    .grid { grid-template-columns: 1fr; }
+    nav { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="dot"></span> AION 2 DPS Meter</div>
+    <nav>
+      <a href="#funktionen">Funktionen</a>
+      <a href="#installation">Installation</a>
+      <a href="#fragen">Fragen</a>
+      <a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div>
+      <span class="badge">Kostenlos · Open Source · Windows 11</span>
+      <h1>Sieh deinen <span>Schaden</span> live – direkt über dem Spiel.</h1>
+      <p class="lead">Ein schlankes DPS-Overlay für AION 2 (EU): DPS jedes Gruppenmitglieds, Boss-HP mit Berserk-Timer,
+        Kampfkraft, Tode und Kampfverlauf. Rein passiv – es liest nur mit, was ohnehin an deinen PC geschickt wird.</p>
+      <div class="cta">
+        <a class="btn primary" id="download" href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest">⬇ Herunterladen</a>
+        <a class="btn ghost" href="#installation">So geht's</a>
+      </div>
+      <div class="version" id="version">Neueste Version auf GitHub</div>
+    </div>
+
+    <div class="overlay" aria-label="Beispiel des Overlays (erfundene Namen)">
+      <div class="ov-head"><div><b>● Kampf</b><span class="t">1:42</span></div><div class="icons">⚙ ☰ ✕</div></div>
+      <div class="boss">
+        <div class="name">Beispiel-Boss</div>
+        <div class="status">Kampf läuft · Kill ~0:58 · <span class="bz">Berserk in 3:18</span></div>
+        <div class="hp"><i></i><span><span>5.737.000 HP</span><span>37,0 %</span></span></div>
+      </div>
+      <div class="row"><i style="width:100%;background:linear-gradient(90deg,#7a4ea0,#9b5cc4)"></i><div><span class="ci" style="background:#9b5cc4"></span><span class="n">Lyra<span class="cp">◆ 120,6K</span></span><span class="d">41,56K/s</span><span class="s">30,5 %</span></div></div>
+      <div class="row"><i style="width:66%;background:linear-gradient(90deg,#2f7f7a,#3ea6a0)"></i><div><span class="ci" style="background:#3ea6a0"></span><span class="n">Korvin<span class="cp">◆ 101,6K</span></span><span class="d">27,23K/s</span><span class="s">20,1 %</span></div></div>
+      <div class="row"><i style="width:62%;background:linear-gradient(90deg,#3f7a35,#5ea04e)"></i><div><span class="ci" style="background:#5ea04e"></span><span class="n">Du<span class="me">ICH</span><span class="cp">◆ 97,7K</span></span><span class="d">25,62K/s</span><span class="s">18,6 %</span></div></div>
+      <div class="row"><i style="width:58%;background:linear-gradient(90deg,#a88a30,#d8b040)"></i><div><span class="ci" style="background:#d8b040"></span><span class="n">Mira<span class="cp">◆ 109,9K</span></span><span class="d">24,35K/s</span><span class="s">17,7 %</span></div></div>
+      <div class="row"><i style="width:45%;background:linear-gradient(90deg,#94502e,#c06a3a)"></i><div><span class="ci" style="background:#c06a3a"></span><span class="n">Taro<span class="cp">◆ 84,9K</span></span><span class="d">18,55K/s</span><span class="s">13,2 %</span></div></div>
+    </div>
+  </div>
+</div>
+
+<section id="funktionen">
+  <div class="wrap">
+    <h2>Funktionen</h2>
+    <p class="sub">Alles Wichtige auf einen Blick – und nichts, was stört.</p>
+    <div class="grid">
+      <div class="card"><div class="ico">📊</div><h3>Live-DPS</h3><p>DPS, Schaden und Anteil jedes Spielers, flüssig animiert. Allein nur du, in der Gruppe automatisch alle.</p></div>
+      <div class="card"><div class="ico">🐉</div><h3>Boss-Leiste</h3><p>HP von Dungeon- und Weltbossen, geschätzte Kill-Zeit und Berserk-Countdown, wenn der Boss ein Zeitlimit hat.</p></div>
+      <div class="card"><div class="ico">◆</div><h3>Kampfkraft</h3><p>Die Kampfkraft von dir und deinen Gruppenmitgliedern direkt neben dem Namen.</p></div>
+      <div class="card"><div class="ico">💀</div><h3>Tode</h3><p>Wie oft jemand im Kampf gestorben ist – mit Totenkopf neben dem Namen.</p></div>
+      <div class="card"><div class="ico">📈</div><h3>Details & Verlauf</h3><p>Fähigkeiten pro Spieler, DPS-Kurve, gespeicherte Kämpfe und Wochenstatistik mit Bestwerten.</p></div>
+      <div class="card"><div class="ico">⏰</div><h3>Event-Alarme</h3><p>Erinnerung vor Events und Weltboss-Zeiten, mit Ton. Dazu Tastenkürzel und Tray-Symbol.</p></div>
+      <div class="card"><div class="ico">👁</div><h3>Gut lesbar</h3><p>Kontraststufen, Farbthemen, Schriftgröße, Deckkraft und automatisches Ausblenden ohne Kampf.</p></div>
+      <div class="card"><div class="ico">⬆</div><h3>Updates per Klick</h3><p>Gibt es eine neue Version, erscheint ein Hinweis im Overlay. Ein Klick – geprüft und installiert.</p></div>
+      <div class="card"><div class="ico">🔒</div><h3>Rein passiv</h3><p>Kein Speicherzugriff, keine Injektion, keine Automatisierung. Deine Daten bleiben auf deinem PC.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="installation">
+  <div class="wrap">
+    <h2>Installation</h2>
+    <p class="sub">In zwei Minuten startklar.</p>
+    <ol class="steps">
+      <li><b>Npcap installieren</b><span>Der Meter liest die Netzwerkpakete mit <a href="https://npcap.com/">Npcap</a> mit. Einmal installieren, Standard-Einstellungen genügen.</span></li>
+      <li><b>DPS Meter herunterladen</b><span>Die neueste <code>.exe</code> unter <a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest">Releases</a> laden. Keine Installation nötig – eine einzige Datei.</span></li>
+      <li><b>Starten</b><span>EXE starten (Windows fragt evtl. nach – die Datei ist nicht signiert: „Weitere Informationen“ → „Trotzdem ausführen“). Dann AION 2 starten.</span></li>
+      <li><b>Kämpfen</b><span>Das Overlay zeigt automatisch deinen Kampf. Einstellungen über das ⚙-Symbol.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section id="fragen">
+  <div class="wrap">
+    <h2>Fragen</h2>
+    <p class="sub">&nbsp;</p>
+    <details><summary>Verändert der Meter etwas am Spiel?</summary><p>Nein. Er liest nur die Netzwerkpakete mit, die ohnehin an deinen PC gehen. Er greift nicht auf den Spielspeicher zu, schleust nichts ein und sendet nichts an das Spiel oder den Server.</p></details>
+    <details><summary>Ist das erlaubt?</summary><p>Der Meter ist inoffiziell und steht in keiner Verbindung zu NCSOFT. Die Nutzungsbedingungen von NCSOFT untersagen nicht autorisierte Programme – die Nutzung erfolgt auf eigene Gefahr.</p></details>
+    <details><summary>Wie bekomme ich Updates?</summary><p>Der Meter fragt beim Start und alle 6 Stunden auf GitHub nach einer neuen Version. Gibt es eine, erscheint oben im Overlay ein goldener Hinweis – ein Klick lädt sie, prüft die Prüfsumme und startet neu. Einstellungen und Kämpfe bleiben erhalten.</p></details>
+    <details><summary>Warum sehe ich bei anderen keine Kampfkraft?</summary><p>Das Spiel schickt die Kampfkraft nur für dich und deine Gruppenmitglieder, nicht für fremde Spieler.</p></details>
+    <details><summary>Wo werden meine Daten gespeichert?</summary><p>Nur lokal unter <code>Dokumente\Aion2DpsMeter</code> (Einstellungen, Kämpfe). Nichts wird hochgeladen.</p></details>
+    <details><summary>Was brauche ich?</summary><p>Windows 11 (64 Bit, Windows 10 sollte auch gehen) und Npcap. .NET muss nicht installiert sein.</p></details>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="note">⚠ Inoffizielles Fan-Projekt. Keine Verbindung zu NCSOFT. AION ist eine Marke von NCSOFT. Nutzung auf eigene Gefahr.</div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Open Source unter MIT-Lizenz · <a href="https://github.com/unbreakablelp0-beep/aion-2-dpsmeter">Quellcode auf GitHub</a></div>
+</footer>
+
+<script>
+  // Neueste Version und direkter EXE-Link von der GitHub-API (ohne Erfolg bleibt der Link zur Release-Seite).
+  (async () => {
+    try {
+      const r = await fetch("https://api.github.com/repos/unbreakablelp0-beep/aion-2-dpsmeter/releases/latest");
+      if (!r.ok) return;
+      const rel = await r.json();
+      const exe = (rel.assets || []).find(a => /\.exe$/i.test(a.name));
+      const tag = String(rel.tag_name || "").replace(/^v/i, "");
+      if (tag) document.getElementById("version").textContent = "Neueste Version: " + tag + (rel.published_at ? " · " + new Date(rel.published_at).toLocaleDateString("de-DE") : "");
+      if (exe) {
+        const btn = document.getElementById("download");
+        btn.href = exe.browser_download_url;
+        btn.textContent = "⬇ Herunterladen (" + (exe.size / 1048576).toFixed(0) + " MB)";
+      }
+    } catch (e) { /* offline: Link zur Release-Seite bleibt */ }
+  })();
+</script>
+</body>
+</html>
