@@ -82,6 +82,8 @@ public sealed class OverlayWindow : Window
         Margin = new Thickness(0, 4, 0, 4),
     };
     private readonly TextBlock _bossStatus = new() { Foreground = DimBrush };
+    // Berserk-Prognose: „Schafft ihr / Knapp / Zu wenig DPS“ (nur bei Bossen mit Zeitlimit).
+    private readonly TextBlock _bossForecast = new() { FontWeight = FontWeights.SemiBold, Visibility = Visibility.Collapsed, TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock _bossHp = new() { Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold };
     private readonly TextBlock _bossTopHit = new() { HorizontalAlignment = HorizontalAlignment.Right, FontWeight = FontWeights.Bold, Foreground = Frozen(Color.FromRgb(0xF2, 0xC2, 0x6A)) };
     private readonly TextBlock _bossTopHitLabel = new() { Text = "TOP-TREFFER", HorizontalAlignment = HorizontalAlignment.Right, Foreground = DimBrush };
@@ -351,6 +353,7 @@ public sealed class OverlayWindow : Window
         var nameBlock = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         nameBlock.Children.Add(_bossName);
         nameBlock.Children.Add(_bossStatus);
+        nameBlock.Children.Add(_bossForecast);
         bossHead.Children.Add(nameBlock);
         _bossCard.Children.Add(bossHead);
         _bossCard.Children.Add(_bossBar);
@@ -647,6 +650,20 @@ public sealed class OverlayWindow : Window
 
         if (berserkText is not null) _bossStatus.Text += " · " + berserkText;
         _bossStatus.Foreground = left is { } l && l < TimeSpan.FromSeconds(30) ? Brushes.OrangeRed : DimBrush;
+
+        var forecast = _settings.ShowBerserkForecast ? BossRules.BerserkForecast(boss, now, TimeSpan.FromSeconds(15)) : null;
+        _bossForecast.Visibility = forecast is null ? Visibility.Collapsed : Visibility.Visible;
+        if (forecast is { } fc)
+        {
+            _bossForecast.Text = fc.Text;
+            _bossForecast.FontSize = Math.Max(8, FontSize - 2);
+            _bossForecast.Foreground = fc.Level switch
+            {
+                0 => ForecastGood,
+                1 => ForecastTight,
+                _ => ForecastBad,
+            };
+        }
         _bossHp.Text = OverlayFormat.BossHpText(boss);
         _bossValue.Text = boss.Fraction is { } f ? (f * 100).ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo("de-DE")) + " %" : string.Empty;
         var showTopHit = false; // Top-Treffer auf Wunsch des Besitzers ausgeblendet
@@ -749,6 +766,9 @@ public sealed class OverlayWindow : Window
     }
 
     private static readonly Brush[] PingBrushes = [Frozen(Color.FromRgb(0x4C, 0xD9, 0x64)), Frozen(Color.FromRgb(0xF2, 0xC1, 0x4E)), Frozen(Color.FromRgb(0xE8, 0x4C, 0x4C))];
+    private static readonly Brush ForecastGood = Frozen(Color.FromRgb(0x5D, 0xD8, 0x6E));
+    private static readonly Brush ForecastTight = Frozen(Color.FromRgb(0xF2, 0xC1, 0x4E));
+    private static readonly Brush ForecastBad = Frozen(Color.FromRgb(0xFF, 0x6B, 0x6B));
     private static readonly Brush PingOff = Frozen(Color.FromArgb(0x50, 0xFF, 0xFF, 0xFF));
 
     /// <summary>Zusatz-Od-Energie „+95“; ausgeblendet, solange das Spiel den Wert noch nicht geschickt hat.</summary>
@@ -815,7 +835,10 @@ public sealed class OverlayWindow : Window
             if (members.Count >= 2) BuildLobby(members, snapshot);
         }
 
-        var show = members.Count >= 2 && !content.Active && (content.Rows.Count == 0 || now - _lobbyChangedAt < TimeSpan.FromMinutes(1));
+        // Nur während eine Gruppe zusammengesucht wird: Gruppe hat sich in den letzten 3 Minuten geändert (Beitritt/Austritt)
+        // und seitdem wurde nicht gekämpft. Im Dungeon und nach dem Dungeon (alte Gruppe) bleibt die Lobby aus.
+        var foughtSinceChange = snapshot.LastHit is { } lastHit && lastHit > _lobbyChangedAt;
+        var show = members.Count >= 2 && !content.Active && !foughtSinceChange && now - _lobbyChangedAt < TimeSpan.FromMinutes(3);
         _lobby.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
     }
 

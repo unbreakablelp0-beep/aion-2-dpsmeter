@@ -117,6 +117,8 @@ public sealed class OverlaySettingsWindow : Window
                 "Zusatz-Od-Energie (der blaue Wert, z. B. +95) unten in der Fußzeile. Erscheint, sobald das Spiel ihn schickt (beim Einloggen oder Einlösen)."),
             Setting("Od-Energie zusammenrechnen", Toggle(() => _get().OdTotal, v => Change(s => s with { OdTotal = v })),
                 "An: eine Zahl (z. B. 110 = 15 + 95 Zusatz). Aus: aufgeteilt wie im Spiel, „15 (+95)“. Die Aufteilung steht immer im Tooltip."),
+            Setting("Berserk-Prognose", Toggle(() => _get().ShowBerserkForecast, v => Change(s => s with { ShowBerserkForecast = v })),
+                "In der Boss-Karte bei Bossen mit Zeitlimit: „Schafft ihr“ (grün), „Knapp“ (gelb) oder „Zu wenig DPS – so viel % mehr nötig“ (rot). Erscheint nach ca. 15 s Kampf."),
             Setting("Gruppen-Lobby anzeigen", Toggle(() => _get().ShowLobby, v => Change(s => s with { ShowLobby = v })),
                 "Wenn du in einer Gruppe bist und gerade kein Kampf läuft: alle Mitglieder mit Stufe, GS und KS – Beitritt und Austritt sofort sichtbar."),
             Setting("Ping anzeigen", Toggle(() => _get().ShowPing, v => Change(s => s with { ShowPing = v })),

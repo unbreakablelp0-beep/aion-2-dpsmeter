@@ -573,7 +573,8 @@ public sealed class LiveCombatMeter
                 return;
             }
 
-            if (_lastHit is { } last && hit.Time - last > IdleTimeout)
+            // Nach einem Boss-Tod (EndFight) beginnt mit dem nächsten Treffer ein neuer Kampf.
+            if (_lastHit is { } last && (hit.Time - last > IdleTimeout || (_endedAt is { } ended && hit.Time - ended > TimeSpan.FromSeconds(2))))
             {
                 // Alter Kampf ist vorbei: für den Verlauf festhalten, falls ihn noch niemand abgeholt hat.
                 if (_exportedFight != _fight && BuildFightRecord() is { } finished) _pendingFights.Add(finished);
@@ -582,7 +583,12 @@ public sealed class LiveCombatMeter
                 _start = null;
             }
 
-            if (_start is null) _fight++;
+            if (_start is null)
+            {
+                _fight++;
+                _endedAt = null;
+            }
+
             _start ??= hit.Time;
             if (hit.Time < _start) _start = hit.Time;
             if (_lastHit is null || hit.Time > _lastHit) _lastHit = hit.Time;
@@ -761,7 +767,8 @@ public sealed class LiveCombatMeter
 
     private FightRecord? BuildFightRecord()
     {
-        if (_start is not { } start || _lastHit is not { } end || _actors.Count == 0) return null;
+        if (_start is not { } start || _lastHit is not { } lastHit || _actors.Count == 0) return null;
+        var end = _endedAt is { } ended && ended < lastHit ? ended : lastHit;
 
         var own = CurrentOwn();
         var enemies = Enemies();
@@ -798,6 +805,7 @@ public sealed class LiveCombatMeter
             _actors.Clear();
             _start = null;
             _lastHit = null;
+            _endedAt = null;
             _fight = 0;
             _exportedFight = 0;
             _ignoredSelf = 0;
@@ -850,10 +858,27 @@ public sealed class LiveCombatMeter
         }
     }
 
-    private bool IsActive(DateTimeOffset now, DateTimeOffset last) => now - Lag - last <= IdleTimeout;
+    private bool IsActive(DateTimeOffset now, DateTimeOffset last) => _endedAt is null && now - Lag - last <= IdleTimeout;
+
+    // Kampf sofort beendet (Boss tot): Zeit und DPS bleiben auf diesem Zeitpunkt stehen.
+    private DateTimeOffset? _endedAt;
+
+    /// <summary>
+    /// Kampf jetzt beenden (z. B. der Boss ist gestorben): Kampfdauer und DPS werden auf <paramref name="time"/> eingefroren
+    /// und der Kampf kommt sofort in den Verlauf. Der nächste Treffer (später als 2 s danach) startet einen neuen Kampf.
+    /// </summary>
+    public void EndFight(DateTimeOffset time)
+    {
+        lock (_lock)
+        {
+            if (_start is not { } start || _endedAt is not null || time < start) return;
+            _endedAt = time;
+        }
+    }
 
     private DateTimeOffset FightEnd(DateTimeOffset now, DateTimeOffset last)
     {
+        if (_endedAt is { } ended) return ended;
         if (!IsActive(now, last)) return last;
         var shifted = now - Lag;
         return shifted > last ? shifted : last;

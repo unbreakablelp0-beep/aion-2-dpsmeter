@@ -561,6 +561,23 @@ public partial class MainWindow : Window
         return result;
     }
 
+    /// <summary>
+    /// Boss tot (HP 0): Kampf sofort beenden, damit DPS und Zeit genau beim Tod stehen bleiben – nur bei echten Bossen,
+    /// die ich bzw. meine Gruppe in diesem Kampf getroffen habe. Läuft auf dem Aufnahme-Thread (Meter ist gesperrt-sicher).
+    /// </summary>
+    private void EndFightIfBossDied(uint target, DateTimeOffset time)
+    {
+        if (_enemyHp.Status(target, time) is not { } status) return;
+        var npc = _npcNames.Lookup(status.NpcCode);
+        // Einfrieren auch bei großen Gegnern, die die Gegnerliste nicht als Boss kennt (z. B. eine Kromede-Variante, 15,5 Mio HP).
+        var big = status.MaxHp >= OverlayFormat.BossMinMaxHp && !(npc is not null && (npc.IsDummy || BossRules.IsObjectName(npc.Name)));
+        if (!big && !BossRules.IsRealBoss(npc, status.Deadline is not null)) return;
+        if (_liveMeter.OwnActor is not { } own) return;
+        var sources = new HashSet<uint>(_liveMeter.PartyMembers()) { own };
+        if (_liveMeter.FirstHitOn(target, sources) is null) return;
+        _liveMeter.EndFight(time);
+    }
+
     /// <summary>Speichert beendete Kämpfe im Verlauf (eigene Dateien, nie überschreiben).</summary>
     private void SaveFinishedFights(IEnumerable<FightRecord> fights)
     {
@@ -703,6 +720,7 @@ public partial class MainWindow : Window
                     _enemyHp.Report(hp.Target, hp.Hp, hp.MaxHp, time, hp.NpcCode);
                     // Nur 00 8D (Art 2 = Gegner) markiert sicher; 41 36 meldet auch Beschwörungen von Spielern.
                     if (hp.MaxHp is null) _liveMeter.MarkEnemy(hp.Target);
+                    if (hp.Hp == 0) EndFightIfBossDied(hp.Target, time);
                 },
                 _liveMeter.ReportParty,
                 list => Dispatcher.BeginInvoke(() => OnFieldBossList(list)),

@@ -1,9 +1,12 @@
 # Patchnotes
 
 ## Unveröffentlicht
-- Neue Versionen kommen schneller an: AionMeta schaut jetzt alle 30 Minuten nach Updates (vorher alle 6 Stunden).
 
 ## 0.0.8 – 15.10.2026
+- Neu: Berserk-Prognose in der Boss-Leiste – hat der Boss ein Zeitlimit, zeigt AionMeta nach 15 s Kampf, ob eure DPS reicht: grün „Schafft ihr“, gelb „Knapp“, rot „Zu wenig DPS“ mit Angabe, wie viel mehr DPS nötig ist (Einstellungen → „Berserk-Prognose“).
+- DPS frieren beim Boss-Tod sofort ein, statt bis zum Kampfende weiter zu sinken.
+- Gruppen-Lobby nur noch bei der Gruppensuche: nicht mehr im Dungeon und nicht mehr nach dem Dungeon mit veralteten Mitgliedern.
+- Neue Versionen kommen schneller an: AionMeta schaut jetzt alle 30 Minuten nach Updates (vorher alle 6 Stunden).
 - Bestenliste: Beim Teilen kommen jetzt auch dein eigener GS und deine eigene KS mit (nur deine, nie die anderer Spieler). Wer schon zugestimmt hatte, wird deshalb einmal neu gefragt.
 - Bosse genauer erkannt: Totems, Trainingspuppen, Sandsäcke und andere Objekte gelten nicht mehr als Boss – keine Boss-Leiste und kein Eintrag in der Bestenliste.
 - In die Bestenliste kommen nur noch echte Bosse (laut Gegnerliste oder mit Zeitlimit vom Spiel), keine unbekannten Gegner mehr.

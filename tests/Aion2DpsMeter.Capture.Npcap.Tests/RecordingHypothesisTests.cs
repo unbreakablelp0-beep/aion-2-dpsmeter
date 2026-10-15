@@ -552,6 +552,31 @@ public class RecordingHypothesisTests(ITestOutputHelper output)
         }
     }
 
+    /// <summary>Boss-Tod: kommt für große Gegner (Max-HP ab 5 Mio.) eine HP-Meldung mit 0? Zeit relativ zum Aufnahmebeginn.</summary>
+    [Fact]
+    public async Task FindsBossDeaths()
+    {
+        var path = Environment.GetEnvironmentVariable(PathVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            output.WriteLine($"Nicht ausgeführt: {PathVariable} ist nicht gesetzt.");
+            return;
+        }
+
+        var tracker = new Core.Combat.EnemyHpTracker();
+        DateTimeOffset? start = null;
+        var decoder = new LiveCombatDecoder(_ => { }, onEnemyHp: (hp, time) =>
+        {
+            start ??= time;
+            tracker.Report(hp.Target, hp.Hp, hp.MaxHp, time, hp.NpcCode);
+            if (hp.Hp == 0 && tracker.Status(hp.Target, time) is { MaxHp: >= 5_000_000 } boss)
+            {
+                output.WriteLine($"BOSS-TOD #{hp.Target} (NPC {boss.NpcCode}, Max {boss.MaxHp}) bei {(time - start.Value).TotalSeconds:0.0} s");
+            }
+        });
+        await new PcapFileSource().ReadRawAsync(path, decoder.Add, CancellationToken.None).WaitAsync(TimeSpan.FromMinutes(2));
+    }
+
     /// <summary>Ping passiv aus der Aufnahme (TCP-Sequenz/ACK der Spielverbindung): Verlauf in 10-s-Schritten.</summary>
     [Fact]
     public async Task MeasuresPingPassively()
