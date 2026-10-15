@@ -1,10 +1,10 @@
 # Patchnotes
 
 ## Unveröffentlicht
-- Weichere Animationen: DPS-Balken gleiten, die Zahlen zählen sanft hoch und beim Überholen tauschen die Zeilen ruhig die Plätze.
-- Neu: Überholt jemand einen anderen, steht kurz ein grünes ▲ oder rotes ▼ neben dem Namen (Einstellungen → „Platzwechsel-Pfeile“). Mit „Effekte & Animationen“ aus springt alles ohne Gleiten.
 
 ## 0.0.8 – 15.10.2026
+- Weichere Animationen: DPS-Balken gleiten, die Zahlen zählen sanft hoch und beim Überholen tauschen die Zeilen ruhig die Plätze.
+- Neu: Überholt jemand einen anderen, steht kurz ein grünes ▲ oder rotes ▼ neben dem Namen (Einstellungen → „Platzwechsel-Pfeile“). Mit „Effekte & Animationen“ aus springt alles ohne Gleiten.
 - Neu: Berserk-Prognose in der Boss-Leiste – hat der Boss ein Zeitlimit, zeigt AionMeta nach 15 s Kampf, ob eure DPS reicht: grün „Schafft ihr“, gelb „Knapp“, rot „Zu wenig DPS“ mit Angabe, wie viel mehr DPS nötig ist (Einstellungen → „Berserk-Prognose“).
 - DPS frieren beim Boss-Tod sofort ein, statt bis zum Kampfende weiter zu sinken.
 - Gruppen-Lobby nur noch bei der Gruppensuche: nicht mehr im Dungeon und nicht mehr nach dem Dungeon mit veralteten Mitgliedern.
