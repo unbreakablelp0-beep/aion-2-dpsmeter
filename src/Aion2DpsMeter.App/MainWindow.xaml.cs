@@ -117,7 +117,7 @@ public partial class MainWindow : Window
         if (SharedFight.From(fight, AppRelease.Current, withName: mode == ShareModes.WithName, gs, ks) is { } shared) _ = _share.ShareAsync(shared);
     }
     private volatile OdEnergy? _od; // Od-Energie aus dem Spiel (null = noch nicht gesehen)
-    private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromSeconds(10) }; // erst kurz nach dem Start, dann alle 6 h
+    private readonly DispatcherTimer _updateTimer = new() { Interval = TimeSpan.FromSeconds(10) }; // erst kurz nach dem Start, dann alle 30 min
     private UpdateInfo? _update;
     private string? _updateProgress;
     private bool _updating;
@@ -142,11 +142,11 @@ public partial class MainWindow : Window
         _alarmTimer.Tick += (_, _) => CheckEventAlarms();
         _alarmTimer.Start();
 
-        // Update-Prüfung: Reste eines früheren Updates wegräumen, dann kurz nach dem Start und alle 6 h bei GitHub fragen.
+        // Update-Prüfung: Reste eines früheren Updates wegräumen, dann kurz nach dem Start und alle 30 Minuten bei GitHub fragen.
         if (UpdateService.InstallableExePath() is { } exe) UpdateInstaller.CleanUp(exe);
         _updateTimer.Tick += async (_, _) =>
         {
-            _updateTimer.Interval = TimeSpan.FromHours(6);
+            _updateTimer.Interval = TimeSpan.FromMinutes(30);
             if (!_overlaySettings.CheckForUpdates || _updating) return;
             _update = await _updates.CheckAsync(CancellationToken.None);
         };

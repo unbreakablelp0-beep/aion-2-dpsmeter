@@ -80,7 +80,7 @@ public sealed class OverlaySettingsWindow : Window
                 "Aus (Standard): nichts wird gesendet. Anonym / Mit Name: nach jedem Bosskampf gehen Boss, Dauer, dein Schaden, deine DPS, " +
                 "Klasse, dein GS, deine KS und die Version an die Bestenliste der AionMeta-Webseite – bei „Mit Name“ zusätzlich dein Charaktername. Nie Werte oder Namen anderer Spieler."),
             Setting("Auf Updates prüfen", Toggle(() => _get().CheckForUpdates, v => Change(s => s with { CheckForUpdates = v })),
-                $"Du hast {Aion2DpsMeter.Core.Updates.AppRelease.Current}. Fragt beim Start und alle 6 Stunden bei GitHub nach einer neuen Version " +
+                $"Du hast {Aion2DpsMeter.Core.Updates.AppRelease.Current}. Fragt beim Start und alle 30 Minuten bei GitHub nach einer neuen Version " +
                 "(nur lesen, es werden keine Daten gesendet). Gibt es eine, erscheint im Overlay ein Hinweis – ein Klick darauf installiert sie nach Rückfrage."),
             Setting("Programm beenden", ActionButton("Beenden", exit), "Aufnahme stoppen, Einstellungen speichern, schließen."));
 

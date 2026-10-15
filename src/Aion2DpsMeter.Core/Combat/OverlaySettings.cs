@@ -22,7 +22,7 @@ namespace Aion2DpsMeter.Core.Combat;
 /// <param name="OdTotal">Od-Energie zusammengerechnet zeigen (z. B. 110) statt aufgeteilt („15 (+95)“); Standard an.</param>
 /// <param name="ShowLobby">Gruppen-Lobby (Mitglieder mit Stufe, GS, KS) zeigen, solange kein Kampf läuft; Standard an.</param>
 /// <param name="ShowPing">Ping zum Spielserver in der Fußzeile zeigen (passiv gemessen); Standard an.</param>
-/// <param name="CheckForUpdates">Beim Start und alle 6 h bei GitHub nach einer neuen Version fragen (nur lesen); Standard an.</param>
+/// <param name="CheckForUpdates">Beim Start und alle 30 min bei GitHub nach einer neuen Version fragen (nur lesen); Standard an.</param>
 /// <param name="Contrast">Lesbarkeit: „Normal“, „Hoch“ (Standard) oder „Sehr hoch“ – hellere Schrift, Schatten, Mindest-Deckkraft.</param>
 /// <param name="AutoHideSeconds">Overlay nach so vielen Sekunden ohne Kampf ausblenden (10/30/60/120), 0 = nie (Standard).</param>
 /// <param name="Theme">Farbthema (Akzentfarbe): Violett, Türkis, Gold, Schlicht.</param>
