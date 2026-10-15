@@ -130,8 +130,10 @@ public sealed class OverlaySettingsWindow : Window
             Setting("Kampfende-Karte", Toggle(() => _get().ShowFightEndCard, v => Change(s => s with { ShowFightEndCard = v })),
                 "Nach jedem Kampf kurz eine Karte mit Dauer, DPS, Anteil, Platz und Bestwert einblenden (Standard aus)."),
             Setting("Effekte & Animationen", Toggle(() => _get().Effects, v => Change(s => s with { Effects = v })),
-                "Aufblitzen bei großen Treffern, pulsierender Kampf-Punkt, Nachzieh-Effekt und Blinken der Boss-Leiste, Schatten, " +
-                "Einblenden der Kampfende-Karte. Aus = ruhige Anzeige (spart etwas Rechenzeit)."),
+                "Gleitende Balken, hochzählende Zahlen, sanfter Platztausch, Aufblitzen bei großen Treffern, pulsierender Kampf-Punkt, " +
+                "Nachzieh-Effekt und Blinken der Boss-Leiste, Schatten, Einblenden der Kampfende-Karte. Aus = ruhige Anzeige ohne Gleiten (spart etwas Rechenzeit)."),
+            Setting("Platzwechsel-Pfeile", Toggle(() => _get().ShowRankArrows, v => Change(s => s with { ShowRankArrows = v })),
+                "Überholt jemand einen anderen, steht kurz (ca. 3 s) ein grünes ▲ oder rotes ▼ neben dem Namen. Nur mit „Effekte & Animationen“."),
             Setting("Boss-Leiste anzeigen", Toggle(() => _get().ShowBossBar, v => Change(s => s with { ShowBossBar = v })),
                 "HP-Leiste des Gegners, den du gerade am meisten triffst: Prozent, Rest-HP und geschätzte Zeit bis zum Kill. " +
                 "Ohne Max-HP (mitten im Kampf eingestiegen) nur die Rest-HP. Noch nicht im Spiel bestätigt (*)."),

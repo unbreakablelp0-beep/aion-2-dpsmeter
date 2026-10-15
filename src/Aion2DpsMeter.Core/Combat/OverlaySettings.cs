@@ -20,6 +20,7 @@ namespace Aion2DpsMeter.Core.Combat;
 /// <param name="ShareConsent">Stand der beantworteten Einwilligung (<see cref="ShareModes.ConsentVersion"/>); älter → neu fragen.</param>
 /// <param name="ShareAsked">true, sobald die einmalige Frage zum Teilen beantwortet wurde.</param>
 /// <param name="ShowBerserkForecast">Berserk-Prognose in der Boss-Karte („Schafft ihr / Knapp / Zu wenig DPS“); Standard an.</param>
+/// <param name="ShowRankArrows">Beim Überholen kurz ▲/▼ neben dem Namen zeigen (ca. 3 s); Standard an.</param>
 /// <param name="OdTotal">Od-Energie zusammengerechnet zeigen (z. B. 110) statt aufgeteilt („15 (+95)“); Standard an.</param>
 /// <param name="ShowLobby">Gruppen-Lobby (Mitglieder mit Stufe, GS, KS) zeigen, solange kein Kampf läuft; Standard an.</param>
 /// <param name="ShowPing">Ping zum Spielserver in der Fußzeile zeigen (passiv gemessen); Standard an.</param>
@@ -71,7 +72,8 @@ public sealed record OverlaySettings(
     string ShareMode = ShareModes.Off,
     bool ShareAsked = false,
     int ShareConsent = 0,
-    bool ShowBerserkForecast = true)
+    bool ShowBerserkForecast = true,
+    bool ShowRankArrows = true)
 {
     /// <summary>Wählbare Zeiten fürs automatische Ausblenden (0 = aus).</summary>
     public static readonly int[] AutoHideChoices = [0, 10, 30, 60, 120];

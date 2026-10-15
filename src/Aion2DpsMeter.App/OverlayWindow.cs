@@ -144,6 +144,7 @@ public sealed class OverlayWindow : Window
     private readonly StackPanel _lobby = new() { Margin = new Thickness(0, 2, 0, 4), Visibility = Visibility.Collapsed };
     private string? _lobbyKey;
     private readonly Dictionary<uint, RowView> _rows = new();
+    private readonly RankTracker _ranks = new(); // für ▲/▼ beim Überholen
     private OverlaySettings _settings;
     private bool _compact;
     private bool _collapsed;
@@ -408,6 +409,7 @@ public sealed class OverlayWindow : Window
         {
             _rows.Clear(); // Zeilenhöhe hängt an der Schrift: neu aufbauen
             _rowsHost.Children.Clear();
+            _ranks.Reset();
         }
 
         ApplyLook();
@@ -731,6 +733,15 @@ public sealed class OverlayWindow : Window
             view.Update(row, row.ShareValue / maxShare, i * (height + 3), now);
         }
 
+        var changes = _ranks.Update(content.Rows.Select(r => r.Actor).ToList());
+        if (_settings.ShowRankArrows && _settings.Effects)
+        {
+            foreach (var (actor, direction) in changes)
+            {
+                if (_rows.TryGetValue(actor, out var view)) view.ShowRankChange(direction);
+            }
+        }
+
         foreach (var gone in _rows.Keys.Where(k => !seen.Contains(k)).ToList())
         {
             _rowsHost.Children.Remove(_rows[gone].Root);
@@ -1012,38 +1023,40 @@ public sealed class OverlayWindow : Window
         return brush;
     }
 
-    /// <summary>Wert, der in <see cref="Duration"/> mit Abbremsen (ease-out) zum Ziel gleitet.</summary>
+    /// <summary>Wert, der in <c>durationMs</c> mit Abbremsen (ease-out) zum Ziel gleitet; 0 = springt sofort.</summary>
     private struct Tween
     {
-        public static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(250);
-
+        private readonly double _durationMs;
         private double _from;
         private double _to;
         private DateTime _start;
 
-        public Tween(double value)
+        public Tween(double value, double durationMs = 250)
         {
             _from = _to = value;
             _start = DateTime.MinValue;
+            _durationMs = durationMs;
         }
 
         public readonly double Target => _to;
 
         public readonly double ValueAt(DateTime now)
         {
-            var t = (now - _start).TotalMilliseconds / Duration.TotalMilliseconds;
+            if (_durationMs <= 0) return _to;
+            var t = (now - _start).TotalMilliseconds / _durationMs;
             if (t >= 1) return _to;
             if (t <= 0) return _from;
             var eased = 1 - Math.Pow(1 - t, 3);
             return _from + (_to - _from) * eased;
         }
 
-        public readonly bool IsMoving(DateTime now) => (now - _start) < Duration && _from != _to;
+        public readonly bool IsMoving(DateTime now) => _durationMs > 0 && (now - _start).TotalMilliseconds < _durationMs && _from != _to;
 
-        public void Set(double target, DateTime now)
+        /// <summary>Neues Ziel; <paramref name="animate"/> = false springt sofort (Effekte aus).</summary>
+        public void Set(double target, DateTime now, bool animate = true)
         {
             if (target == _to) return;
-            _from = ValueAt(now);
+            _from = animate ? ValueAt(now) : target;
             _to = target;
             _start = now;
         }
@@ -1069,16 +1082,18 @@ public sealed class OverlayWindow : Window
         private readonly TextBlock _share = new() { Foreground = DimBrush, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
         private readonly TranslateTransform _move = new();
         private Tween _y;
-        private Tween _fraction = new(0);
-        private Tween _dpsValue = new(0);
-        private Tween _damageValue = new(0);
+        // Balken und Zahlen gleiten fast die ganze Zeit bis zum nächsten Datenstand (alle 0,5 s) – wirkt wie Hochzählen.
+        private Tween _fraction = new(0, 450);
+        private Tween _dpsValue = new(0, 450);
+        private Tween _damageValue = new(0, 450);
+        private readonly TextBlock _rankArrow = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0), FontWeight = FontWeights.Bold, Opacity = 0, IsHitTestVisible = false };
         private string? _iconKey;
         private string? _brushKey;
 
         public RowView(OverlayWindow owner, uint actor, double height, double y)
         {
             _owner = owner;
-            _y = new Tween(y);
+            _y = new Tween(y, 400); // Platztausch etwas ruhiger
             var size = owner.FontSize;
 
             Root = new Grid { Height = height, VerticalAlignment = VerticalAlignment.Top, RenderTransform = _move, Cursor = Cursors.Hand, Background = Brushes.Transparent, ToolTip = "Klicken: Details zu diesem Spieler" };
@@ -1122,6 +1137,8 @@ public sealed class OverlayWindow : Window
             line.Children.Add(numbers);
             var name = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             name.Children.Add(_name);
+            _rankArrow.FontSize = Math.Max(8, size - 3);
+            name.Children.Add(_rankArrow);
             name.Children.Add(_badge);
             _power.Children.Add(ClassIcons.CreateCombatPowerIcon(Math.Max(10, size)));
             _powerText.FontSize = Math.Max(8, size - 2);
@@ -1185,11 +1202,27 @@ public sealed class OverlayWindow : Window
 
             _lastDamage = row.DamageValue;
 
-            _y.Set(y, now);
-            _fraction.Set(Math.Clamp(fraction, 0, 1), now);
-            _dpsValue.Set(row.DpsValue, now);
-            _damageValue.Set(row.DamageValue, now);
+            var animate = _owner._settings.Effects;
+            _y.Set(y, now, animate);
+            _fraction.Set(Math.Clamp(fraction, 0, 1), now, animate);
+            _dpsValue.Set(row.DpsValue, now, animate);
+            _damageValue.Set(row.DamageValue, now, animate);
         }
+
+        /// <summary>Platzwechsel: ▲ grün (überholt) oder ▼ rot (überholt worden), kurz einblenden, ~2,4 s stehen, dann ausblenden.</summary>
+        public void ShowRankChange(int direction)
+        {
+            _rankArrow.Text = direction > 0 ? "▲" : "▼";
+            _rankArrow.Foreground = direction > 0 ? RankUpBrush : RankDownBrush;
+            var fade = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+            fade.KeyFrames.Add(new System.Windows.Media.Animation.LinearDoubleKeyFrame(1, System.Windows.Media.Animation.KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(150))));
+            fade.KeyFrames.Add(new System.Windows.Media.Animation.LinearDoubleKeyFrame(1, System.Windows.Media.Animation.KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(2400))));
+            fade.KeyFrames.Add(new System.Windows.Media.Animation.LinearDoubleKeyFrame(0, System.Windows.Media.Animation.KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(3000))));
+            _rankArrow.BeginAnimation(UIElement.OpacityProperty, fade);
+        }
+
+        private static readonly Brush RankUpBrush = Frozen(Color.FromRgb(0x6E, 0xE0, 0x8A));
+        private static readonly Brush RankDownBrush = Frozen(Color.FromRgb(0xF0, 0x7A, 0x7A));
 
         private static byte Lighten(byte value) => (byte)Math.Min(255, value + (255 - value) * 0.25);
 
