@@ -1,6 +1,6 @@
 # Patchnotes
 
-## Unveröffentlicht
+## 0.0.8 – 15.10.2026
 - Bestenliste: Beim Teilen kommen jetzt auch dein eigener GS und deine eigene KS mit (nur deine, nie die anderer Spieler). Wer schon zugestimmt hatte, wird deshalb einmal neu gefragt.
 - Auf der Webseite: Bestenliste als Tabelle mit Filtern (Boss, Klasse, KS-Bereich) und Klassen-Statistik (Top 10 %, Top 25 %, Median, Höchstwert, Vergleich zur Vorwoche).
 
