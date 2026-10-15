@@ -1,11 +1,9 @@
 # Patchnotes
 
-## Unveröffentlicht
-- Bosse genauer erkannt: Totems, Trainingspuppen, Sandsäcke und andere Objekte gelten nicht mehr als Boss – keine Boss-Leiste und kein Eintrag in der Bestenliste.
-- In die Bestenliste kommen nur noch echte Bosse (laut Gegnerliste oder mit Zeitlimit vom Spiel), keine unbekannten Gegner mehr.
-
 ## 0.0.8 – 15.10.2026
 - Bestenliste: Beim Teilen kommen jetzt auch dein eigener GS und deine eigene KS mit (nur deine, nie die anderer Spieler). Wer schon zugestimmt hatte, wird deshalb einmal neu gefragt.
+- Bosse genauer erkannt: Totems, Trainingspuppen, Sandsäcke und andere Objekte gelten nicht mehr als Boss – keine Boss-Leiste und kein Eintrag in der Bestenliste.
+- In die Bestenliste kommen nur noch echte Bosse (laut Gegnerliste oder mit Zeitlimit vom Spiel), keine unbekannten Gegner mehr.
 - Auf der Webseite: Bestenliste als Tabelle mit Filtern (Boss, Klasse, KS-Bereich) und Klassen-Statistik (Top 10 %, Top 25 %, Median, Höchstwert, Vergleich zur Vorwoche).
 
 ## 0.0.7 – 14.10.2026
