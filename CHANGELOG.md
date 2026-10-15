@@ -2,7 +2,6 @@
 
 ## Unveröffentlicht
 - Bestenliste: Beim Teilen kommen jetzt auch dein eigener GS und deine eigene KS mit (nur deine, nie die anderer Spieler). Wer schon zugestimmt hatte, wird deshalb einmal neu gefragt.
-- Wer von einer sehr alten Version (0.0.1–0.0.3) updatet, sieht nach dem Update die Neuerungen der letzten Versionen.
 - Auf der Webseite: Bestenliste als Tabelle mit Filtern (Boss, Klasse, KS-Bereich) und Klassen-Statistik (Top 10 %, Top 25 %, Median, Höchstwert, Vergleich zur Vorwoche).
 
 ## 0.0.7 – 14.10.2026

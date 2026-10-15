@@ -155,8 +155,6 @@ public partial class MainWindow : Window
         var seenStore = new SeenVersionStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Aion2DpsMeter", "version.json"));
         var lastSeen = seenStore.Load();
         var newNotes = PatchNotes.ToShow(PatchNotesWindow.All, lastSeen, AppRelease.Current);
-        // Update von 0.0.1–0.0.3 (die merkten sich die Version noch nicht): bestehender Nutzer → die letzten Versionen zeigen.
-        if (lastSeen is null && _overlayStore.State == OverlaySettingsFileState.Loaded) newNotes = PatchNotesWindow.All.Take(4).ToList();
         seenStore.Save(AppRelease.Current);
         if (newNotes.Count > 0) Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => ShowPatchNotes(newNotes, afterUpdate: lastSeen is not null));
 
