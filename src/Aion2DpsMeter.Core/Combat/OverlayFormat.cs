@@ -203,6 +203,7 @@ public static class OverlayFormat
     public static bool IsBoss(BossStatus boss, NpcInfo? npc)
     {
         ArgumentNullException.ThrowIfNull(boss);
+        if (npc is not null && BossRules.IsObjectName(npc.Name)) return false; // Totems, Puppen, Objekte
         if (boss.Deadline is not null) return true;
         return npc is not null ? npc.IsBoss && !npc.IsDummy : boss.MaxHp >= BossMinMaxHp;
     }

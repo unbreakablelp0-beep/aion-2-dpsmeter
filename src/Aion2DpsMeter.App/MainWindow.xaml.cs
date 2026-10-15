@@ -96,7 +96,7 @@ public partial class MainWindow : Window
     private TrayIcon? _tray;
     private readonly EnemyHpTracker _enemyHp = new();
     private NpcNames _npcNames = NpcNames.Empty;
-    private readonly List<(string Name, DateTimeOffset At)> _bossSightings = new();
+    private readonly List<(string Name, DateTimeOffset At, bool Real)> _bossSightings = new();
 
     private static string RecordingDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Aion2DpsMeter", "Aufnahmen");
@@ -551,8 +551,10 @@ public partial class MainWindow : Window
         if (OverlayFormat.IsBoss(result, npc))
         {
             var name = npc?.Name ?? $"Gegner #{result.Target}";
-            if (_bossSightings.Count > 0 && _bossSightings[^1].Name == name) _bossSightings[^1] = (name, now);
-            else _bossSightings.Add((name, now));
+            // „Echt“ (für die Bestenliste): nur vom Spiel/der Gegnerliste bestätigte Bosse, keine unbekannten mit viel HP.
+            var real = BossRules.IsRealBoss(npc, result.Deadline is not null);
+            if (_bossSightings.Count > 0 && _bossSightings[^1].Name == name) _bossSightings[^1] = (name, now, real);
+            else _bossSightings.Add((name, now, real));
             if (_bossSightings.Count > 100) _bossSightings.RemoveAt(0);
         }
 
@@ -572,10 +574,10 @@ public partial class MainWindow : Window
             try
             {
                 // Boss eintragen, dessen Leiste während des Kampfs zu sehen war (Treffer- und Uhrzeit sind beide UTC).
-                var boss = _bossSightings.LastOrDefault(s => s.At >= fight.Start && s.At <= fight.End.AddSeconds(15)).Name;
-                var saved = boss is null ? fight : fight with { BossName = boss };
+                var sighting = _bossSightings.LastOrDefault(s => s.At >= fight.Start && s.At <= fight.End.AddSeconds(15));
+                var saved = sighting.Name is null ? fight : fight with { BossName = sighting.Name };
                 _fightStore.Save(saved);
-                ShareFight(saved);
+                if (sighting.Real) ShareFight(saved); // Bestenliste nur mit echten Bossen
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
