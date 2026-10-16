@@ -4,15 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AionMeta – DPS-Meter für AION 2</title>
-<meta name="description" content="Inoffizielles, rein passives DPS-Overlay für AION 2 (EU): DPS je Spieler, Boss-HP, Berserk-Timer, Kampfkraft, Tode, Kampfverlauf und Updates per Klick.">
+<meta name="description" content="Inoffizielles, rein passives DPS-Overlay für AION 2 (EU): DPS, Heilung und erlittener Schaden, Boss-Timer wie DBM, Berserk-Prognose, Gruppen-Lobby und Hinweise für Events und Feldbosse. Kostenlos, Updates per Klick.">
 <link rel="icon" type="image/png" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/logo-96.png">
 <meta property="og:title" content="AionMeta – DPS-Meter für AION 2">
-<meta property="og:description" content="Live-DPS, Boss-HP, Berserk-Timer, Kampfkraft und Tode als Overlay. Kostenlos, rein passiv, Updates per Klick.">
-<meta property="og:image" content="https://unbreakablelp0-beep.github.io/aion-2-dpsmeter/assets/logo.jpg">
+<meta property="og:description" content="DPS, Heilung, Boss-Timer wie DBM und Event-Hinweise als Overlay für AION 2. Kostenlos, rein passiv, Updates per Klick.">
+<meta property="og:image" content="https://unbreakablelp0-beep.github.io/aion-2-dpsmeter/assets/og-image.jpg">
+<meta property="og:image:width" content="800">
+<meta property="og:image:height" content="420">
 <meta property="og:url" content="https://unbreakablelp0-beep.github.io/aion-2-dpsmeter/">
 <meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0b0d14">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -118,6 +120,22 @@
   .ov-head .t { font-family: var(--num); color: #c8cdd6; font-size: 14px; }
   .ov-head .btns { display: flex; gap: 7px; color: #c8cdd6; font-size: 13px; }
   .ov-line { color: #c8cdd6; font-size: 12px; margin: 4px 2px 2px; }
+  .ov-tabs { display: flex; gap: 4px; margin: 6px 0 2px 2px; }
+  .ov-tabs button { font: inherit; font-size: 12px; color: #c8cdd6; background: none; border: 0; border-radius: 4px; padding: 1px 7px 2px; cursor: pointer; text-shadow: inherit; }
+  .ov-tabs button:hover { background: rgba(255,255,255,.08); }
+  .ov-tabs button.on { background: rgba(255,255,255,.2); color: #fff; font-weight: 600; }
+  .ov-alert { margin: 5px 0 2px; padding: 5px 8px; border-radius: 6px; border: 1px solid #f2c94c; background: rgba(200,150,42,.33); font-weight: 600; animation: alertpulse 2.4s ease-in-out 1; }
+  @keyframes alertpulse { 0%, 100% { opacity: 1 } 30% { opacity: .55 } 60% { opacity: 1 } }
+  .ov-boss .bf { color: #5dd86e; font-weight: 600; font-size: 11.5px; margin-top: 1px; }
+  .tm { position: relative; height: 20px; margin-top: 4px; border-radius: 4px; background: rgba(0,0,0,.3); overflow: hidden; font-size: 11.5px; }
+  .tm .tf { position: absolute; inset: 0 auto 0 0; background: rgba(123,92,214,.5); transition: width 1s linear; }
+  .tm .tf.soon { background: rgba(224,154,58,.7); }
+  .tm.tm-cast { height: 24px; font-size: 13px; font-weight: 700; }
+  .tm.tm-cast .tf { background: rgba(208,69,69,.8); }
+  .tm span { position: absolute; left: 7px; top: 0; line-height: 20px; }
+  .tm.tm-cast span { line-height: 24px; }
+  .tm em { position: absolute; right: 7px; top: 0; line-height: 20px; font: 700 12px/20px var(--num); font-style: normal; }
+  .tm.tm-cast em { line-height: 24px; }
   .ov-boss { margin: 6px 0 4px; background: rgba(26,12,14,.92); border: 1px solid #c83c3c; border-radius: 8px; padding: 4px 8px 8px; }
   .ov-boss .bn { font-weight: 700; font-size: 16px; }
   .ov-boss .bs { color: #c8cdd6; font-size: 11.5px; }
@@ -321,14 +339,23 @@
       <div class="ov" id="ov" aria-label="Beispiel des Overlays (erfundene Namen)">
         <div class="ov-head">
           <div class="l"><span class="ov-dot"></span><b>Kampf</b><span class="t" id="ov-time">1:42</span></div>
-          <div class="btns" aria-hidden="true"><span>Ⓐ</span><span>⚙</span><span>☷</span><span>⧉</span><span>↺</span><span>☰</span><span>–</span><span>✕</span></div>
+          <div class="btns" aria-hidden="true"><span>☰</span><span>–</span><span>✕</span></div>
         </div>
-        <div class="ov-line">Nächstes: Dimensionale Invasion in 8m 12s</div>
+        <div class="ov-tabs" role="tablist" aria-label="Ansicht wechseln">
+          <button type="button" class="on" data-m="dmg" role="tab">Schaden</button>
+          <button type="button" data-m="heal" role="tab">Heilung</button>
+          <button type="button" data-m="taken" role="tab">Erlitten</button>
+        </div>
+        <div class="ov-alert" id="ov-alert"><span>⏰</span> Weltboss Unsterblicher Gartua in <b id="ov-alert-t">5</b> Min.</div>
         <div class="ov-boss">
-          <div class="bn">Feuerwächter</div>
+          <div class="bn">Kromedes Gier</div>
           <div class="bs">Kampf läuft · Kill ~<span id="ov-kill">0:58</span> · <span class="bz">Berserk in <span id="ov-bz">3:18</span></span></div>
+          <div class="bf" id="ov-forecast">✔ Schafft ihr – ca. 2:37 Puffer</div>
           <div class="ov-hp"><div class="trail" id="hp-trail" style="width:38%"></div><div class="fill" id="hp-fill" style="width:37%"></div>
             <div class="txt"><span id="hp-abs">5.737.000 HP</span><span id="hp-pct">37,0 %</span></div></div>
+          <div class="tm tm-cast"><div class="tf" style="width:62%"></div><span>⚠ Todesmal <b>→ DU</b></span><em id="tm-1">1,4 s</em></div>
+          <div class="tm"><div class="tf" style="width:40%"></div><span>Teufelsflamme</span><em id="tm-2">3,3 s</em></div>
+          <div class="tm"><div class="tf soon" style="width:15%"></div><span>Regen des Hasses</span><em id="tm-3">28 s</em></div>
         </div>
         <div class="rows" id="rows"></div>
         <div class="ov-foot"><span class="me" id="foot-me"></span><span class="lock">🔓</span></div>
@@ -344,12 +371,15 @@
       <p class="sub">Allein siehst du nur dich, in der Gruppe automatisch alle. Ohne Knopfdruck.</p>
       <div class="features">
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M4 20V12M10 20V6M16 20v-9M22 20V3"/></svg></div><h3>Live-DPS</h3><p>DPS, Schaden und Anteil jedes Spielers, flüssig animiert und nach Klassen eingefärbt.</p></div>
-        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 12a9 9 0 0 1 18 0"/><rect x="3" y="15" width="18" height="5" rx="1.5"/></svg></div><h3>Boss-Karte</h3><p>HP von Dungeon- und Weltbossen, geschätzte Kill-Zeit und automatischer Berserk-Countdown.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 12a9 9 0 0 1 18 0"/><rect x="3" y="15" width="18" height="5" rx="1.5"/></svg></div><h3>Boss-Karte</h3><p>HP von Dungeon- und Weltbossen, geschätzte Kill-Zeit, Berserk-Countdown und eine Prognose, ob eure DPS bis zum Zeitlimit reicht.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/></svg></div><h3>Heilung & Erlitten</h3><p>Ein Klick wechselt die Ansicht: DPS, Heilung pro Sekunde oder erlittener Schaden pro Spieler. Läuft im ganzen Kampf mit.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></div><h3>Boss-Timer wie DBM</h3><p>Die Boss-Fähigkeit wird angesagt, bevor sie trifft – mit „auf DICH“ – und die nächsten Fähigkeiten laufen als Timer. Bisher im Feuertempel.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 2l9 10-9 10-9-10z"/><path d="M12 7l4 5-4 5-4-5z"/></svg></div><h3>Kampfkraft</h3><p>Die Kampfkraft von dir und deiner Gruppe direkt neben dem Namen.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6M16 14c3 0 6 1.5 6 5"/></svg></div><h3>Gruppen-Lobby</h3><p>Bei der Gruppensuche siehst du alle Mitglieder mit Stufe, Ausrüstungswert und Kampfkraft – Beitritt sofort.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 3C7 3 4 6.5 4 10.5c0 2.6 1.4 4.4 3 5.3V19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3.2c1.6-.9 3-2.7 3-5.3C20 6.5 17 3 12 3z"/><circle cx="9" cy="11" r="1.6"/><circle cx="15" cy="11" r="1.6"/></svg></div><h3>Tode</h3><p>Wie oft jemand im Kampf gestorben ist – mit Totenkopf neben dem Namen.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 6-8 3 4"/><path d="M3 21h18"/></svg></div><h3>Details & Verlauf</h3><p>Fähigkeiten pro Spieler, DPS-Kurve, gespeicherte Kämpfe und Wochenstatistik mit Bestwerten.</p></div>
-        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3L2 6M19 3l3 3"/></svg></div><h3>Event-Alarme</h3><p>Erinnerung vor Events und Weltboss-Zeiten, mit Ton. Dazu Tastenkürzel und Tray-Symbol.</p></div>
-        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="rgba(201,178,255,.5)"/></svg></div><h3>Gut lesbar</h3><p>Kontraststufen, Farbthemen, Schriftgröße, Deckkraft und automatisches Ausblenden.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3L2 6M19 3l3 3"/></svg></div><h3>Hinweise mit Ton</h3><p>Event-Zeiten für EU laden sich täglich von selbst, Feldboss-Timer starten automatisch. Die Erinnerung kommt als Karte im Overlay, mit Ton zur Auswahl.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="rgba(201,178,255,.5)"/></svg></div><h3>Gut lesbar</h3><p>Kontraststufen, Farbthemen, Schriftgröße, Deckkraft, Animationen zum Abschalten und automatisches Ausblenden.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div><h3>Updates per Klick</h3><p>Neue Version? Ein Hinweis im Overlay, ein Klick – geprüft und installiert.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Rein passiv</h3><p>Kein Speicherzugriff, keine Injektion, keine Automatisierung. Gesendet wird nur, wenn du das Teilen für die Bestenliste einschaltest.</p></div>
       </div>
@@ -498,13 +528,15 @@
   const SKULL = `<svg width="12" height="12" viewBox="0 0 24 24"><path d="M12,2 C6.5,2 3,5.8 3,10.5 C3,13.6 4.6,15.6 6.5,16.6 L6.5,19.5 C6.5,20.6 7.4,21.5 8.5,21.5 L15.5,21.5 C16.6,21.5 17.5,20.6 17.5,19.5 L17.5,16.6 C19.4,15.6 21,13.6 21,10.5 C21,5.8 17.5,2 12,2 Z" fill="#ece6da"/><circle cx="8.6" cy="10.8" r="2.4" fill="#1a161c"/><circle cx="15.4" cy="10.8" r="2.4" fill="#1a161c"/></svg>`;
 
   // ---- Beispielgruppe (erfundene Namen) ----
+  // dps = Schaden pro Sekunde, heal = Heilung pro Sekunde, taken = erlittener Schaden pro Sekunde (alles erfunden)
   const players = [
-    { n: "Lyra",   k: "Assassine",   cp: "120,6K", dps: 41560 },
-    { n: "Korvin", k: "Beschwoerer", cp: "101,6K", dps: 27230 },
-    { n: "Du",     k: "Bogen",       cp: "97,7K",  dps: 25620, own: 1 },
-    { n: "Mira",   k: "Kleriker",    cp: "109,9K", dps: 24350, dead: 1 },
-    { n: "Taro",   k: "Gladiator",   cp: "84,9K",  dps: 18550 },
+    { n: "Lyra",   k: "Assassine",   cp: "120,6K", dps: 41560, heal: 0,    taken: 620 },
+    { n: "Korvin", k: "Beschwoerer", cp: "101,6K", dps: 27230, heal: 1400, taken: 540 },
+    { n: "Du",     k: "Bogen",       cp: "97,7K",  dps: 25620, own: 1, heal: 0, taken: 480 },
+    { n: "Mira",   k: "Kleriker",    cp: "109,9K", dps: 24350, dead: 1, heal: 9400, taken: 710 },
+    { n: "Taro",   k: "Gladiator",   cp: "84,9K",  dps: 18550, heal: 0, taken: 1850 },
   ];
+  let metric = "dmg";
   const de = (v, d = 1) => v.toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d });
   const k = (v) => v >= 1e6 ? de(v / 1e6, 2) + "M" : v >= 1e3 ? de(v / 1e3, 2) + "K" : String(Math.round(v));
   const rowsEl = document.getElementById("rows");
@@ -526,10 +558,12 @@
   const maxHp = 15504000;
   const tick = () => {
     t++;
-    players.forEach(p => { p.cur = p.dps * (0.94 + Math.random() * 0.12); p.total = p.cur * t; });
-    const top = Math.max(...players.map(p => p.cur));
-    const sum = players.reduce((a, p) => a + p.total, 0);
-    players.sort((a, b) => b.cur - a.cur).forEach((p, i) => {
+    const wobble = () => 0.94 + Math.random() * 0.12;
+    players.forEach(p => { p.dmgNow = p.dps * wobble(); p.cur = p[metric === "dmg" ? "dps" : metric] * wobble(); p.total = p.cur * t; });
+    const top = Math.max(...players.map(p => p.cur), 1);
+    const sum = players.reduce((a, p) => a + p.total, 0) || 1;
+    players.filter(p => p.cur > 0 || metric === "dmg").sort((a, b) => b.cur - a.cur).forEach((p, i) => {
+      p.el.style.display = "";
       p.el.style.order = i;
       rowsEl.appendChild(p.el);
       p.el.querySelector(".bar").style.width = (p.cur / top * 100).toFixed(1) + "%";
@@ -537,7 +571,9 @@
       p.el.querySelector(".m").textContent = k(p.total);
       p.el.querySelector(".s").textContent = de(p.total / sum * 100) + " %";
     });
-    const groupDps = players.reduce((a, p) => a + p.cur, 0);
+    // Wer in dieser Ansicht nichts hat (z. B. keine Heilung), verschwindet.
+    players.filter(p => !(p.cur > 0 || metric === "dmg")).forEach(p => p.el.style.display = "none");
+    const groupDps = players.reduce((a, p) => a + p.dmgNow, 0);
     hp = Math.max(0, hp - groupDps);
     if (hp <= 0) { hp = maxHp * 0.62; t = 30; }
     const pct = hp / maxHp * 100;
@@ -550,6 +586,27 @@
     document.getElementById("ov-kill").textContent = mm(hp / groupDps);
     document.getElementById("ov-bz").textContent = mm(Math.max(0, 300 - t));
   };
+  // Reiter wie im Programm: Schaden · Heilung · Erlitten
+  document.querySelectorAll(".ov-tabs button").forEach(b => b.addEventListener("click", () => {
+    metric = b.dataset.m;
+    document.querySelectorAll(".ov-tabs button").forEach(x => x.classList.toggle("on", x === b));
+    tick();
+  }));
+  // Boss-Timer: laufen herunter und beginnen von vorn
+  let tm = [1.4, 3.3, 28];
+  const tmTotals = [2, 3.9, 43];
+  setInterval(() => {
+    tm = tm.map((v, i) => v <= 0.1 ? tmTotals[i] * (0.8 + Math.random() * 0.4) : v - 0.1);
+    document.querySelectorAll(".tm").forEach((el, i) => {
+      const v = tm[i];
+      el.querySelector("em").textContent = (v < 10 ? v.toFixed(1).replace(".", ",") : Math.round(v)) + " s";
+      const f = el.querySelector(".tf");
+      f.style.width = Math.max(0, Math.min(100, (1 - v / tmTotals[i]) * 100)) + "%";
+      f.classList.toggle("soon", i > 0 && v < 5);
+    });
+  }, 100);
+  let alertMin = 5;
+  setInterval(() => { alertMin = alertMin <= 1 ? 5 : alertMin - 1; document.getElementById("ov-alert-t").textContent = alertMin; }, 6000);
   tick();
   setInterval(tick, 1000);
 
