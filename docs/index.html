@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AionMeta – DPS-Meter für AION 2</title>
-<meta name="description" content="Inoffizielles, rein passives DPS-Overlay für AION 2 (EU): DPS, Heilung und erlittener Schaden, Boss-Timer wie DBM, Berserk-Prognose, Gruppen-Lobby und Hinweise für Events und Feldbosse. Kostenlos, Updates per Klick.">
+<meta name="description" content="Inoffizielles, rein passives DPS-Overlay für AION 2 (EU): DPS, Heilung und erlittener Schaden, Boss-Timer wie DBM, Berserk-Prognose, Pet-Übersicht mit Seelen, Gruppen-Lobby und Hinweise für Events und Feldbosse. Kostenlos, Updates per Klick.">
 <link rel="icon" type="image/png" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/logo-96.png">
 <meta property="og:title" content="AionMeta – DPS-Meter für AION 2">
-<meta property="og:description" content="DPS, Heilung, Boss-Timer wie DBM und Event-Hinweise als Overlay für AION 2. Kostenlos, rein passiv, Updates per Klick.">
+<meta property="og:description" content="DPS, Heilung, Boss-Timer wie DBM, Pet-Seelen und Event-Hinweise als Overlay für AION 2. Kostenlos, rein passiv, Updates per Klick.">
 <meta property="og:image" content="https://unbreakablelp0-beep.github.io/aion-2-dpsmeter/assets/og-image.jpg">
 <meta property="og:image:width" content="800">
 <meta property="og:image:height" content="420">
@@ -283,6 +283,52 @@
     .ov { font-size: 12px; }
     .r .m { display: none; }
   }
+  /* Pets-Bereich: Pet-Fenster und Pin-Leiste (erfundene Testwerte, keine Spielgrafiken) */
+  .pet-demo { display: grid; gap: 18px; justify-items: center; }
+  .pet-demo .ov { width: 100%; max-width: 430px; box-sizing: border-box; }
+  .pw { width: 100%; max-width: 430px; background: #10121a; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 14px 14px 10px; font: 13px/1.3 "Segoe UI", Inter, sans-serif; color: #e6e8ee; box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+  .pw-title { font-size: 20px; font-weight: 600; }
+  .pw-card { margin: 8px 0 12px; padding: 10px 14px 13px; border-radius: 14px; border: 1px solid #2a2e3a; background: linear-gradient(180deg, #1c1f29, #15171f); box-shadow: 0 0 22px rgba(226,194,122,.14); }
+  .pw-top { display: flex; align-items: flex-end; justify-content: space-between; }
+  .pw-top b { font: 700 32px/1 var(--num); color: #e2c27a; } .pw-top i { font-style: normal; color: #9aa0ae; font-size: 17px; margin-left: 3px; } .pw-top small { color: #9aa0ae; font-size: 12px; margin-left: 12px; }
+  .pw-top em { font-style: normal; font-weight: 600; font-size: 16px; color: #e2c27a; }
+  .pw-bar { position: relative; height: 16px; margin-top: 8px; border-radius: 8px; background: #0b0d12; border: 1px solid #2a2e3a; padding: 2px; box-sizing: border-box; }
+  .pw-bar i { position: relative; display: block; height: 100%; width: 0; border-radius: 6px; overflow: hidden; background: linear-gradient(90deg, #c99e4a, #f3dd9c); transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
+  .pw-bar i::after { content: ""; position: absolute; top: 0; bottom: 0; width: 56px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent); animation: shine 5s ease-in-out infinite; }
+  @keyframes shine { 0% { left: -70px; } 38% { left: 100%; } 100% { left: 100%; } }
+  .pw-sub { color: #9aa0ae; font-size: 11.5px; margin-bottom: 9px; }
+  .pw-pills { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 8px; }
+  .pw-pills button { font: inherit; font-size: 12px; font-weight: 600; color: #9aa0ae; background: #232734; border: 1px solid #3a4155; border-radius: 8px; padding: 5px 12px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.4); transition: background .15s, color .15s, border-color .15s, transform .1s; }
+  .pw-pills button:hover { background: #2e3446; border-color: var(--violet); color: #fff; }
+  .pw-pills button:active { transform: scale(.96); }
+  .pw-pills button.on { background: rgba(155,108,255,.28); border-color: var(--violet); color: #fff; box-shadow: 0 0 12px rgba(155,108,255,.55); }
+  .pc { display: grid; grid-template-columns: 40px 1fr 118px 22px; gap: 10px; align-items: center; background: #181b23; border: 1px solid #2a2e3a; border-radius: 10px; padding: 7px 8px; margin-bottom: 6px; transition: background .15s, border-color .15s, transform .15s; animation: pcin .35s ease both; }
+  .pc:hover { background: #1f232d; transform: translateX(2px); }
+  .pc.pin { border-color: #e2c27a; }
+  .pc .pi { width: 40px; height: 40px; border-radius: 8px; background: #10121a; border: 1.5px solid #7c8496; display: grid; place-items: center; }
+  .pc .pi svg { width: 22px; height: 22px; fill: #9aa0ae; }
+  .pc.l2 .pi { border-color: #6ba6e8; } .pc.l3 .pi { border-color: #e2c27a; } .pc.l0 .pi { opacity: .5; }
+  .pc .pn { font-weight: 600; } .pc .ps { font-size: 11px; color: #7c8496; } .pc.l2 .ps { color: #6ba6e8; } .pc.l3 .ps { color: #e2c27a; }
+  .pc .pv { text-align: right; font-weight: 600; font-family: var(--num); font-size: 14px; }
+  .pc .pb { height: 5px; border-radius: 3px; background: #2a2e3a; margin-top: 4px; overflow: hidden; }
+  .pc .pb i { display: block; height: 100%; background: #7c8496; border-radius: 3px; transition: width .6s ease; } .pc.l2 .pb i { background: #6ba6e8; }
+  .pc .st { font-size: 18px; color: #9aa0ae; cursor: pointer; text-align: center; background: none; border: 0; padding: 0; transition: transform .15s, color .15s; }
+  .pc .st:hover { transform: scale(1.25); color: #fff; } .pc.pin .st { color: #e2c27a; }
+  .pstrip { margin: 6px 0 2px; padding: 2px; border-radius: 6px; border: 1px solid rgba(226,194,122,.35); background: rgba(226,194,122,.1); }
+  .pstrip:empty { display: none; }
+  .pr { position: relative; height: 20px; margin: 1px 0; border-radius: 3px; background: rgba(0,0,0,.3); overflow: hidden; font-size: 12px; }
+  .pr .tf { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, rgba(168,132,60,.5), rgba(216,184,110,.7)); transition: width .8s ease; }
+  .pr { height: 22px; border-radius: 5px; } .pr span { line-height: 22px; } .pr em { line-height: 22px; }
+  .pr::after { content: ""; position: absolute; inset: 0; background: rgba(255,233,168,.75); opacity: 0; pointer-events: none; }
+  .pr.flash::after { animation: flash .9s ease-out; }
+  .pr.enter { animation: prin .5s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes flash { from { opacity: .85; } to { opacity: 0; } }
+  @keyframes prin { from { opacity: 0; transform: translateX(160px); } to { opacity: 1; transform: none; } }
+  .pr span { position: absolute; left: 7px; line-height: 20px; } .pr em { position: absolute; right: 7px; line-height: 20px; font: 700 12px/20px var(--num); font-style: normal; }
+  .ready .pc { animation: none; }
+  @keyframes pcin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .pr.enter, .pr.flash::after, .pw-bar i::after { animation: none; } .pc { animation: none; } .pw-bar i, .pc .pb i, .pr .tf { transition: none; } }
+
 </style>
 </head>
 <body>
@@ -293,6 +339,7 @@
     <div class="brand"><img class="logo-img" src="assets/logo-96.png" alt="" width="34" height="34">AionMeta</div>
     <nav>
       <a href="#funktionen">Funktionen</a>
+      <a href="#pets">Pets</a>
       <a href="#updates">Updates</a>
       <a href="#installation">Installation</a>
       <a href="#bestenliste">Bestenliste</a>
@@ -373,15 +420,47 @@
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M4 20V12M10 20V6M16 20v-9M22 20V3"/></svg></div><h3>Live-DPS</h3><p>DPS, Schaden und Anteil jedes Spielers, flüssig animiert und nach Klassen eingefärbt.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 12a9 9 0 0 1 18 0"/><rect x="3" y="15" width="18" height="5" rx="1.5"/></svg></div><h3>Boss-Karte</h3><p>HP von Dungeon- und Weltbossen, geschätzte Kill-Zeit, Berserk-Countdown und eine Prognose, ob eure DPS bis zum Zeitlimit reicht.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/></svg></div><h3>Heilung & Erlitten</h3><p>Ein Klick wechselt die Ansicht: DPS, Heilung pro Sekunde oder erlittener Schaden pro Spieler. Läuft im ganzen Kampf mit.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 13c-3.5 0-5.5 3-5.5 5.5 0 2 2.5 2.5 5.5 2.5s5.5-.5 5.5-2.5c0-2.5-2-5.5-5.5-5.5z"/><circle cx="5.5" cy="9" r="2"/><circle cx="18.5" cy="9" r="2"/><circle cx="9.5" cy="5" r="2"/><circle cx="14.5" cy="5" r="2"/></svg></div><h3>Pets</h3><p>Sammlungsfortschritt wie im Spiel (z. B. 131/200), Stufe und Seelen jedes Pets mit Suche und Filtern. Neue Seelen zählen sofort mit; mit dem Stern pinnst du Pets als kleine Leiste ins Overlay.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></div><h3>Boss-Timer wie DBM</h3><p>Die Boss-Fähigkeit wird angesagt, bevor sie trifft – mit „auf DICH“ – und die nächsten Fähigkeiten laufen als Timer. Bisher im Feuertempel.</p></div>
-        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 2l9 10-9 10-9-10z"/><path d="M12 7l4 5-4 5-4-5z"/></svg></div><h3>Kampfkraft</h3><p>Die Kampfkraft von dir und deiner Gruppe direkt neben dem Namen.</p></div>
+        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 2l9 10-9 10-9-10z"/><path d="M12 7l4 5-4 5-4-5z"/></svg></div><h3>Kampfkraft & Tode</h3><p>Die Kampfkraft von dir und deiner Gruppe direkt neben dem Namen, dazu wie oft jemand im Kampf gestorben ist.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6M16 14c3 0 6 1.5 6 5"/></svg></div><h3>Gruppen-Lobby</h3><p>Bei der Gruppensuche siehst du alle Mitglieder mit Stufe, Ausrüstungswert und Kampfkraft – Beitritt sofort.</p></div>
-        <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 3C7 3 4 6.5 4 10.5c0 2.6 1.4 4.4 3 5.3V19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3.2c1.6-.9 3-2.7 3-5.3C20 6.5 17 3 12 3z"/><circle cx="9" cy="11" r="1.6"/><circle cx="15" cy="11" r="1.6"/></svg></div><h3>Tode</h3><p>Wie oft jemand im Kampf gestorben ist – mit Totenkopf neben dem Namen.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 6-8 3 4"/><path d="M3 21h18"/></svg></div><h3>Details & Verlauf</h3><p>Fähigkeiten pro Spieler, DPS-Kurve, gespeicherte Kämpfe und Wochenstatistik mit Bestwerten.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3L2 6M19 3l3 3"/></svg></div><h3>Hinweise mit Ton</h3><p>Event-Zeiten für EU laden sich täglich von selbst, Feldboss-Timer starten automatisch. Die Erinnerung kommt als Karte im Overlay, mit Ton zur Auswahl.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="rgba(201,178,255,.5)"/></svg></div><h3>Gut lesbar</h3><p>Kontraststufen, Farbthemen, Schriftgröße, Deckkraft, Animationen zum Abschalten und automatisches Ausblenden.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div><h3>Updates per Klick</h3><p>Neue Version? Ein Hinweis im Overlay, ein Klick – geprüft und installiert.</p></div>
         <div class="f"><div class="fi"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Rein passiv</h3><p>Kein Speicherzugriff, keine Injektion, keine Automatisierung. Gesendet wird nur, wenn du das Teilen für die Bestenliste einschaltest.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pets">
+    <div class="wrap split">
+      <div class="pet-demo">
+        <div class="ov" aria-label="Beispiel: Pin-Leiste im Overlay (erfundene Werte)">
+          <div class="ov-head"><div class="l"><span class="ov-dot"></span><b>Kampf</b><span class="t">0:48</span></div><div class="btns" aria-hidden="true"><span>☰</span><span>–</span><span>✕</span></div></div>
+          <div class="pstrip" id="pstrip"></div>
+          <div style="text-align:center;color:#c8cdd6;padding:12px 0 8px">… darunter die Spieler wie gewohnt</div>
+        </div>
+        <div class="pw" aria-label="Beispiel: Pet-Fenster (erfundene Werte)">
+          <div class="pw-title">Pets</div>
+          <div class="pw-card"><div class="pw-top"><span><b id="pw-count">0</b><i>/200</i><small>Pets gesammelt</small></span><em id="pw-pct">0 %</em></div><div class="pw-bar"><i id="pw-fill"></i></div></div>
+          <div class="pw-pills" id="pw-pills" role="tablist">
+            <button type="button" class="on" data-f="all">Alle</button><button type="button" data-f="2">Stufe 2</button><button type="button" data-f="1">Stufe 1</button><button type="button" data-f="0">Fehlt</button><button type="button" data-f="3">Fertig</button>
+          </div>
+          <div id="pw-list"></div>
+        </div>
+        <div class="tag">Beispiel · erfundene Werte</div>
+      </div>
+      <div>
+        <div class="eyebrow">Pets</div>
+        <h2>Deine Pet-Seelen immer im Blick.</h2>
+        <p class="sub">Kein ständiges Menü-Öffnen im Spiel mehr: AionMeta liest deine Pet-Liste und zählt jede neue Seele sofort mit.</p>
+        <ul class="checks">
+          <li><div><b>Sammlungsfortschritt wie im Spiel</b><span>Zum Beispiel 131/200, dazu Stufe und Seelen jedes Pets mit Suche und Filtern (Stufe 2, Stufe 1, Fehlt, Fertig).</span></div></li>
+          <li><div><b>Pets anpinnen</b><span>Mit dem Stern pinnst du bis zu 5 Pets. Sie erscheinen als kleine Leiste direkt über den Spielern im Overlay, mit Seelen bis zur nächsten Stufe.</span></div></li>
+          <li><div><b>Live mitgezählt</b><span>Sammelst du eine Seele, steigt die Anzeige sofort, samt Stufenaufstieg. Du öffnest nichts im Spiel.</span></div></li>
+          <li><div><b>Öffnen im ☰-Menü</b><span>Unter „Pets (Seelen)“. Namen sind eingebaut und lassen sich per Doppelklick ändern. AionMeta liest nur mit und verändert nichts am Spiel.</span></div></li>
+        </ul>
       </div>
     </div>
   </section>
@@ -773,6 +852,57 @@
       }
     } catch (e) { /* offline: Link zur Release-Seite bleibt */ }
   })();
+  // Pets-Bereich: Pet-Fenster mit Filtern, Sternen (Pin-Leiste im Overlay) und langsam hochzählenden Seelen – erfundene Werte
+  (function () {
+    const list = document.getElementById("pw-list"), strip = document.getElementById("pstrip"), pills = document.getElementById("pw-pills");
+    if (!list || !strip) return;
+    const paw = '<svg viewBox="0 0 24 24"><path d="M12 13c-3.5 0-5.5 3-5.5 5.5 0 2 2.5 2.5 5.5 2.5s5.5-.5 5.5-2.5c0-2.5-2-5.5-5.5-5.5z"/><ellipse cx="5.5" cy="9" rx="2" ry="2.5"/><ellipse cx="18.5" cy="9" rx="2" ry="2.5"/><ellipse cx="9.5" cy="4.8" rx="2" ry="2.5"/><ellipse cx="14.5" cy="4.8" rx="2" ry="2.5"/></svg>';
+    const pets = [
+      { id: 1042, n: "Ursus", l: 2, s: 42, pin: true }, { id: 1056, n: "Sonde (Drakan)", l: 2, s: 41, pin: true }, { id: 1016, n: "Slink", l: 2, s: 35 },
+      { id: 1002, n: "Fronarbeiter (Krall)", l: 1, s: 24 }, { id: 1004, n: "Fossa", l: 1, s: 3 }, { id: 1159, n: "Parasitenschwarm", l: 0, s: 4 }, { id: 1005, n: "Klaw", l: 3, s: 90 }
+    ];
+    let filter = "all", seen = null;
+    const target = p => p.l === 1 ? 25 : p.l === 2 ? 75 : 0;
+    const val = p => p.l === 0 ? (p.s ? p.s + " Seelen" : "–") : p.l >= 3 ? "MAX" : p.s + "/" + target(p);
+    const pct = p => p.l === 0 ? 0 : p.l >= 3 ? 100 : Math.min(100, p.s / target(p) * 100);
+    function draw() {
+      list.innerHTML = pets.filter(p => filter === "all" || p.l === +filter).map(p =>
+        '<div class="pc l' + p.l + (p.pin ? " pin" : "") + '" data-id="' + p.id + '"><div class="pi">' + paw + '</div><div><div class="pn">' + p.n +
+        '</div><div class="ps">' + (p.l ? "Stufe " + p.l : "Nicht gesammelt") + " · #" + p.id + '</div></div><div><div class="pv">' + val(p) +
+        '</div>' + (p.l && p.l < 3 ? '<div class="pb"><i style="width:' + pct(p) + '%"></i></div>' : "") +
+        '</div><button type="button" class="st" aria-label="Pet anpinnen" aria-pressed="' + !!p.pin + '">' + (p.pin ? "★" : "☆") + "</button></div>").join("");
+      const now = new Set(pets.filter(p => p.pin).map(p => p.id));
+      strip.innerHTML = pets.filter(p => p.pin).map(p => '<div class="pr' + (seen && !seen.has(p.id) ? " enter" : "") + '" data-id="' + p.id + '"><div class="tf" style="width:' + pct(p) + '%"></div><span>' + p.n + "</span><em>" + val(p) + "</em></div>").join("");
+      seen = now;
+    }
+    list.addEventListener("click", e => {
+      const b = e.target.closest(".st"); if (!b) return;
+      const p = pets.find(x => x.id === +b.closest(".pc").dataset.id);
+      const pinned = pets.filter(x => x.pin);
+      if (!p.pin && pinned.length >= 5) pinned[0].pin = false;
+      p.pin = !p.pin; draw();
+    });
+    pills.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      filter = b.dataset.f; pills.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); draw();
+    });
+    draw();
+    list.classList.add("ready");
+    setTimeout(() => {
+      document.getElementById("pw-fill").style.width = "65.5%";
+      let n = 0; const t = setInterval(() => { n += 3; if (n >= 131) { n = 131; clearInterval(t); } document.getElementById("pw-count").textContent = n; document.getElementById("pw-pct").textContent = Math.round(n / 2) + " %"; }, 16);
+    }, 300);
+    // Alle paar Sekunden eine Seele für Ursus (wie im Spiel: die Anzeige zählt sofort mit)
+    const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce) setInterval(() => {
+      const u = pets[0]; u.s = u.s >= 47 ? 42 : u.s + 1;
+      const card = list.querySelector('.pc[data-id="1042"]');
+      if (card) { card.querySelector(".pv").textContent = val(u); card.querySelector(".pb i").style.width = pct(u) + "%"; }
+      const pr = strip.querySelector('.pr[data-id="1042"]');
+      if (pr) { pr.querySelector("em").textContent = val(u); pr.querySelector(".tf").style.width = pct(u) + "%"; pr.classList.remove("flash"); void pr.offsetWidth; pr.classList.add("flash"); }
+    }, 3500);
+  })();
+
 </script>
 </body>
 </html>
